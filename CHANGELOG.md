@@ -12,6 +12,10 @@ All notable changes to this project are documented here. The format follows [Kee
 - `make_clips.py` no longer prints a download link when ffmpeg is missing.
 - The UI language constant is named `uiLang` instead of `LANG`, which shadowed the environment variable name.
 
+### Added
+
+- `PRIVACY.md` and documentation, support, privacy and terms links in the Claude plugin manifest.
+
 ### Fixed
 
 - Script Desk: Cmd/Ctrl+R (reload) and other modifier shortcuts no longer also trigger the desk's E / F / R actions.

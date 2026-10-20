@@ -24,5 +24,9 @@
     "russian",
     "youtube",
     "human-in-the-loop"
-  ]
+  ],
+  "documentationUrl": "https://github.com/c0t0ber/agent-video-desk#readme",
+  "supportUrl": "https://github.com/c0t0ber/agent-video-desk/issues",
+  "privacyPolicyUrl": "https://github.com/c0t0ber/agent-video-desk/blob/main/PRIVACY.md",
+  "termsOfServiceUrl": "https://github.com/c0t0ber/agent-video-desk/blob/main/LICENSE"
 }
