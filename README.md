@@ -104,7 +104,7 @@ Transcripts are plain Whisper / WhisperX JSON, so **any language works**. Bring 
 
 **Why only Russian for the built-in transcriber?** GigaAM is the most accurate verbatim model for Russian, and the alignment model is language-specific. For other languages, produce word-level JSON with Whisper or WhisperX; Footage Desk reads it as is.
 
-**What language is the UI in?** English, or Russian when the browser language is Russian. Force one with `?lang=en` or `?lang=ru`.
+**What language is the UI in?** English. A Russian translation is built in: open the page with `?lang=ru`.
 
 ## Development
 

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -155,7 +155,7 @@
 const $ = (id) => document.getElementById(id);
 
 // ───────────────────────── i18n ─────────────────────────
-// Language: ?lang=en|ru wins, else the browser language ("ru*" → ru), else en.
+// Language: English by default; ?lang=ru switches to Russian.
 // Every user-visible string lives in STR; ru holds the original wording verbatim.
 // A value may be a plain string or a plural map {one, few, many, other} picked by vars.n
 // through Intl.PluralRules. Values used via innerHTML may contain markup; plain-text
@@ -163,7 +163,8 @@ const $ = (id) => document.getElementById(id);
 const LANG = (() => {
   const q = new URLSearchParams(location.search).get("lang");
   if (q === "en" || q === "ru") return q;
-  return (navigator.language || "").toLowerCase().startsWith("ru") ? "ru" : "en";
+  if (q) console.warn(`i18n: unsupported ?lang=${q}, using English`);
+  return "en";  // English is the default everywhere; Russian only with ?lang=ru
 })();
 document.documentElement.lang = LANG;
 const LOCALE = LANG === "ru" ? "ru-RU" : "en-US";

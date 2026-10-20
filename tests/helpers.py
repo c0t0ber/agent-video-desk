@@ -5,6 +5,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKILLS = os.path.join(ROOT, 'skills')
 SCRIPT_DESK = os.path.join(SKILLS, 'script-desk', 'scripts')
 FOOTAGE_DESK = os.path.join(SKILLS, 'footage-desk', 'scripts')
+START_TIMEOUT = 30  # s; CI runners can be slow to start a Python process
 
 
 def run(script, *args, timeout=60):
@@ -30,16 +31,20 @@ class Server:
             return json.loads(r.read())
 
     def __enter__(self):
-        deadline = time.time() + 10
+        deadline = time.time() + START_TIMEOUT
+        last = None
         while time.time() < deadline:
             if self.proc.poll() is not None:
                 raise RuntimeError('server died on start: ' + self.proc.stderr.read())
             try:
-                with socket.create_connection(('127.0.0.1', self.port), timeout=0.5):
-                    return self
-            except OSError:
-                time.sleep(0.1)
-        raise RuntimeError('server did not come up within 10 s')
+                self.get('/api/poll')
+                return self
+            except OSError as e:  # URLError is an OSError: not listening yet
+                last = e
+                time.sleep(0.2)
+        self.proc.terminate()
+        out, err = self.proc.communicate(timeout=5)
+        raise RuntimeError(f'server did not answer within {START_TIMEOUT} s (last error: {last!r})\nstdout: {out}\nstderr: {err}')
 
     def __exit__(self, *exc):
         self.proc.terminate()

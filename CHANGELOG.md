@@ -13,7 +13,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - Footage Desk: browser desk for picking footage by word-level transcript — take/skip marks on words, watched ranges, clip notes, agent picks, notes and questions with replies.
 - Footage Desk CLI: `build` (proxies with HDR tone mapping and libx264 fallback, frame strips, manifest from any Whisper-format JSON), `text`, `read`, `read --ranges`, `propose`.
 - ru-transcribe: verbatim Russian transcription (GigaAM-v3 CTC) with WhisperX word alignment; `repeats.py`, `peek.py`, `compare.py` for retakes and dirty cuts.
-- English UI with automatic Russian for Russian-language browsers (`?lang=` override).
+- English UI with a built-in Russian translation (`?lang=ru`).
 - Plugin manifests and marketplaces for Claude Code and Codex; `npx skills` compatible layout.
 - Demo project, screenshots, CI on Linux and macOS.
 

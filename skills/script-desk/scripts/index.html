@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -201,15 +201,15 @@ const fmt = t => { t = Math.max(0, t); const m = Math.floor(t / 60), s = Math.fl
 const now = () => new Date().toLocaleString("sv-SE").slice(0, 19);
 
 /* ── i18n: every user-visible string lives in STR ──
-   Language: ?lang=en|ru wins, else navigator.language starting with "ru" → ru, otherwise en.
+   Language: English by default; ?lang=ru switches to Russian.
    t(key, vars) fills {name} placeholders; tn(key, n, vars) also picks a plural form when the entry is an array
    (en: [one, other]; ru: [one, few, many]). A plain string entry is used as is for any n.
    Keys used with data-i18n-html and the help.* keys contain trusted markup; all other values are plain text. */
 const LANG = (() => {
   const q = new URLSearchParams(location.search).get("lang");
   if (q === "en" || q === "ru") return q;
-  if (q) console.warn(`i18n: unsupported ?lang=${q}, falling back to auto-detect`);
-  return (navigator.language || "").toLowerCase().startsWith("ru") ? "ru" : "en";
+  if (q) console.warn(`i18n: unsupported ?lang=${q}, using English`);
+  return "en";
 })();
 document.documentElement.lang = LANG;
 const STR = {
