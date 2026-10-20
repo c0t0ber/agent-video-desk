@@ -205,7 +205,7 @@ const now = () => new Date().toLocaleString("sv-SE").slice(0, 19);
    Language: English by default; ?lang=ru switches to Russian.
    t(key, vars) fills {name} placeholders; tn(key, n, vars) also picks a plural form when the entry is an array
    (en: [one, other]; ru: [one, few, many]). A plain string entry is used as is for any n.
-   Keys used with data-i18n-html and the help.* keys contain trusted markup; all other values are plain text. */
+   Entries used with data-i18n-html and the help.* entries hold our own markup; every other value is plain text. */
 const LANG = (() => {
   const q = new URLSearchParams(location.search).get("lang");
   if (q === "en" || q === "ru") return q;
@@ -980,15 +980,14 @@ $("side").addEventListener("click", e => {
   const sg = el.closest(".seg"); if (sg) { const s = P.transcripts[0].segments[+sg.dataset.seg]; const au = $("au"); if (au) { au.currentTime = s.start; au.play(); } }
 });
 $("side").addEventListener("input", e => { const r = e.target.dataset.reply; if (r) { U.replies[r] = e.target.value; touch(); } });
-// Russian-layout letters on the same physical keys as E / F / R, so the shortcuts work without switching layouts.
-const RU_LAYOUT = { e: "\u0443", f: "\u0430", r: "\u043a" };
+// Shortcuts match the physical key (event.code), so they work in any keyboard layout.
 document.addEventListener("keydown", e => {
   const typing = /TEXTAREA|INPUT/.test(document.activeElement.tagName);
   if (e.key === "Escape") { closePop(); $("fixpop").style.display = "none"; $("help").style.display = "none"; }
-  if (typing) return;
-  if (e.key === "e" || e.key === RU_LAYOUT.e) { e.preventDefault(); startEditing(); }
-  else if (e.key === "f" || e.key === RU_LAYOUT.f) { e.preventDefault(); openFix(); }
-  else if (e.key === "r" || e.key === RU_LAYOUT.r) { e.preventDefault(); voiceNote(); }
+  if (typing || e.metaKey || e.ctrlKey || e.altKey) return;  // leave browser shortcuts like Cmd+R alone
+  if (e.code === "KeyE") { e.preventDefault(); startEditing(); }
+  else if (e.code === "KeyF") { e.preventDefault(); openFix(); }
+  else if (e.code === "KeyR") { e.preventDefault(); voiceNote(); }
   else if (e.key === " " && $("au")) { e.preventDefault(); const au = $("au"); au.paused ? au.play() : au.pause(); }
   else if (e.key === "?") $("help").style.display = "flex";
 });

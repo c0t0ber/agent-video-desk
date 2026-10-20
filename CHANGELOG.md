@@ -4,19 +4,30 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-10-20
+
+### Changed
+
+- Script Desk: the E / F / R shortcuts match the physical key, so they work in any keyboard layout without a per-language map.
+- `make_clips.py` no longer prints a download link when ffmpeg is missing.
+
+### Fixed
+
+- Script Desk: Cmd/Ctrl+R (reload) and other modifier shortcuts no longer also trigger the desk's E / F / R actions.
+
 ## [0.1.2] - 2026-10-20
 
 ### Changed
 
 - Demo clips are no longer committed as binaries; `examples/demo/make_clips.py` generates them with ffmpeg and the system text-to-speech (`say` on macOS, `espeak-ng` on Linux).
-- Script Desk: the Russian keyboard-layout map is named `RU_LAYOUT`, so security scanners don't mistake it for a key.
+- Script Desk: the Russian keyboard-layout map is no longer named like a key constant.
 
 ## [0.1.1] - 2026-10-20
 
 ### Added
 
 - Animated demo of the Script Desk loop and a social preview image in `docs/images/`.
-- Plugin icon (`assets/icon.png`), used as the Codex composer icon and logo.
+- Plugin icon, used as the Codex composer icon and logo.
 - `SECURITY.md`: what runs locally, what goes online, how to report a vulnerability.
 
 ### Changed
@@ -41,7 +52,8 @@ All notable changes to this project are documented here. The format follows [Kee
 - Plugin manifests and marketplaces for Claude Code and Codex; `npx skills` compatible layout.
 - Demo project, screenshots, CI on Linux and macOS.
 
-[Unreleased]: https://github.com/c0t0ber/agent-video-desk/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/c0t0ber/agent-video-desk/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/c0t0ber/agent-video-desk/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/c0t0ber/agent-video-desk/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/c0t0ber/agent-video-desk/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/c0t0ber/agent-video-desk/releases/tag/v0.1.0

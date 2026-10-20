@@ -48,7 +48,7 @@ def speak(text, path):
 
 def main():
     if not shutil.which('ffmpeg'):
-        sys.exit('ffmpeg is required: https://ffmpeg.org/download.html')
+        sys.exit('ffmpeg is required: install it with your package manager (brew install ffmpeg / apt install ffmpeg)')
     os.makedirs(OUT, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmp:
         for name, line, colours, created in CLIPS:
