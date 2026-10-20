@@ -10,6 +10,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 - Script Desk: the E / F / R shortcuts match the physical key, so they work in any keyboard layout without a per-language map.
 - `make_clips.py` no longer prints a download link when ffmpeg is missing.
+- The UI language constant is named `uiLang` instead of `LANG`, which shadowed the environment variable name.
 
 ### Fixed
 

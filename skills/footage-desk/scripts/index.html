@@ -160,14 +160,14 @@ const $ = (id) => document.getElementById(id);
 // A value may be a plain string or a plural map {one, few, many, other} picked by vars.n
 // through Intl.PluralRules. Values used via innerHTML may contain markup; plain-text
 // values are inserted with textContent or escaped by the caller.
-const LANG = (() => {
+const uiLang = (() => {
   const q = new URLSearchParams(location.search).get("lang");
   if (q === "en" || q === "ru") return q;
   if (q) console.warn(`i18n: unsupported ?lang=${q}, using English`);
   return "en";  // English is the default everywhere; Russian only with ?lang=ru
 })();
-document.documentElement.lang = LANG;
-const LOCALE = LANG === "ru" ? "ru-RU" : "en-US";
+document.documentElement.lang = uiLang;
+const LOCALE = uiLang === "ru" ? "ru-RU" : "en-US";
 const STR = {
   en: {
     appName: "Footage Desk",
@@ -300,10 +300,10 @@ const STR = {
     loadFailed: "не удалось загрузить проект: {err}",
   },
 };
-const plural = new Intl.PluralRules(LANG);
+const plural = new Intl.PluralRules(uiLang);
 function t(key, vars) {
-  let s = STR[LANG][key];
-  if (s == null) { console.warn("i18n: missing key", LANG, key); s = STR.en[key] ?? key; }
+  let s = STR[uiLang][key];
+  if (s == null) { console.warn("i18n: missing key", uiLang, key); s = STR.en[key] ?? key; }
   if (typeof s === "object") s = s[plural.select(vars && vars.n != null ? +vars.n : 0)] ?? s.other;
   return vars ? s.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? String(vars[k]) : m)) : s;
 }
