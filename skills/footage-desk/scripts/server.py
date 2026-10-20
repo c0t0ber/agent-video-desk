@@ -12,6 +12,7 @@ Layers live in separate files so nobody overwrites the other side. The page pick
 Listens on 127.0.0.1 only. No dependencies beyond the standard library.
 """
 import argparse, json, mimetypes, os, re, shutil, sys, time
+import socketserver
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import unquote, urlparse
 
@@ -147,8 +148,17 @@ class H(BaseHTTPRequestHandler):
         self.send_json({'ok': True, 'mtime': mtime(USER)})
 
 
+class LocalServer(ThreadingHTTPServer):
+    """HTTPServer.server_bind calls socket.getfqdn(), a reverse DNS lookup that can hang for a long time on macOS.
+    The desk only ever listens on 127.0.0.1, so the name is not needed."""
+
+    def server_bind(self):
+        socketserver.TCPServer.server_bind(self)
+        self.server_name, self.server_port = self.server_address[:2]
+
+
 if __name__ == '__main__':
-    srv = ThreadingHTTPServer(('127.0.0.1', args.port), H)
+    srv = LocalServer(('127.0.0.1', args.port), H)
     print(f'Footage Desk: http://127.0.0.1:{args.port}   project: {PROJECT}', flush=True)
     try:
         srv.serve_forever()
