@@ -1,0 +1,764 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Footage Desk</title>
+<style>
+  :root {
+    --bg: #121418; --panel: #1a1d23; --panel2: #20242c; --line: #2c313b; --fg: #ebe8e2; --dim: #8d929d;
+    --take: #43b871; --skip: #e2594d; --ai: #f2a24a; --sel: #6c9bff; --seen: #566072;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--fg); font: 14px/1.4 -apple-system, system-ui, "Segoe UI", sans-serif; overflow: hidden; }
+  button { font: inherit; color: var(--fg); background: var(--panel2); border: 1px solid var(--line); border-radius: 7px; padding: 6px 11px; cursor: pointer; white-space: nowrap; }
+  button:hover { border-color: #4a5160; background: #262b34; }
+  button.on { background: #33405c; border-color: var(--sel); }
+  button.take { border-color: var(--take); color: #c9f3d8; } button.skip { border-color: var(--skip); color: #ffd3ce; }
+  kbd { font: 11px var(--mono); background: #2b303a; border: 1px solid #3a404c; border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; color: #cfd3da; margin-left: 5px; }
+  input[type=text], textarea { font: inherit; color: var(--fg); background: #15181d; border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; width: 100%; }
+  input:focus, textarea:focus { outline: none; border-color: var(--sel); }
+  body { display: grid; grid-template-columns: 310px 1fr; }
+
+  /* ── clip list ── */
+  #side { display: flex; flex-direction: column; border-right: 1px solid var(--line); background: var(--panel); min-height: 0; height: 100vh; }
+  #side header { padding: 14px 16px 12px; border-bottom: 1px solid var(--line); }
+  #side h1 { font-size: 17px; font-weight: 700; letter-spacing: .01em; }
+  #side h1 span { color: var(--dim); font-weight: 500; }
+  #totals { margin-top: 8px; display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; font-size: 12.5px; color: var(--dim); }
+  #totals b { color: var(--fg); font: 600 12.5px var(--mono); text-align: right; }
+  #clips { flex: 1; overflow-y: auto; padding: 4px 0 20px; }
+  .day { position: sticky; top: 0; z-index: 2; padding: 9px 16px 5px; font: 700 11px var(--mono); letter-spacing: .12em; color: var(--ai); background: var(--panel); }
+  .clip { padding: 7px 16px 8px; cursor: pointer; border-left: 3px solid transparent; }
+  .clip:hover { background: #20242b; }
+  .clip.cur { background: #252a34; border-left-color: var(--sel); }
+  .clip .r1 { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .clip .nm { font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .clip .tm { font: 11.5px var(--mono); color: var(--dim); white-space: nowrap; }
+  .clip .sub { font-size: 11.5px; color: var(--dim); margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mini { position: relative; height: 13px; margin-top: 5px; background: #14171c; border-radius: 3px; overflow: hidden; }
+  .mini i { position: absolute; display: block; }
+  .mini .s { top: 0; height: 3px; background: var(--seen); }
+  .mini .a { top: 4px; height: 3px; background: var(--ai); }
+  .mini .t { top: 8px; height: 5px; background: var(--take); } .mini .k { top: 8px; height: 5px; background: var(--skip); }
+  #save { padding: 9px 16px; border-top: 1px solid var(--line); font: 11.5px var(--mono); color: var(--dim); }
+  #save.err { color: #fff; background: #8f2b22; }
+
+  /* ── main ── */
+  main { display: flex; flex-direction: column; min-width: 0; height: 100vh; position: relative; }
+  #top { display: flex; height: 43vh; min-height: 250px; border-bottom: 1px solid var(--line); }
+  #stage { flex: 1; background: #000; min-width: 0; display: flex; }
+  #v { width: 100%; height: 100%; object-fit: contain; background: #000; }
+  #panel { width: 370px; display: flex; flex-direction: column; background: var(--panel); border-left: 1px solid var(--line); min-height: 0; }
+  #cliphead { padding: 12px 14px 8px; }
+  #cliphead .t { font-size: 16px; font-weight: 700; }
+  #cliphead .m { font: 12px var(--mono); color: var(--dim); margin-top: 2px; }
+  #tools { padding: 0 14px 10px; display: flex; flex-wrap: wrap; gap: 6px; border-bottom: 1px solid var(--line); }
+  #tools button { padding: 4px 9px; font-size: 12.5px; }
+  #lists { flex: 1; overflow-y: auto; padding: 4px 0 12px; }
+  .lh { padding: 10px 14px 4px; font: 700 11px var(--mono); letter-spacing: .1em; color: var(--dim); display: flex; justify-content: space-between; }
+  .item { padding: 6px 14px; display: grid; grid-template-columns: 4px 1fr auto; gap: 9px; align-items: start; cursor: pointer; }
+  .item:hover { background: #20242b; }
+  .item .bar { align-self: stretch; border-radius: 2px; }
+  .item .tc { font: 11.5px var(--mono); color: var(--dim); }
+  .item .nt { font-size: 13px; line-height: 1.3; }
+  .item .st { font-size: 11px; font-weight: 700; }
+  .item .acts { display: flex; gap: 4px; }
+  .item .acts button { padding: 1px 7px; font-size: 12px; }
+  .item input { margin-top: 4px; font-size: 12.5px; padding: 3px 6px; }
+  .empty { padding: 4px 14px; color: var(--dim); font-size: 12.5px; }
+  #clipnote { margin: 4px 14px 0; width: calc(100% - 28px); min-height: 46px; resize: vertical; font-size: 13px; }
+
+  /* ── strip ── */
+  #strip { position: relative; height: 62px; background: #15181d; border-bottom: 1px solid var(--line); cursor: crosshair; user-select: none; flex: none; }
+  #strip i { position: absolute; display: block; pointer-events: none; }
+  #strip .s { top: 5px; height: 4px; background: var(--seen); }
+  #strip .a { top: 13px; height: 9px; background: var(--ai); opacity: .9; border-radius: 2px; }
+  #strip .t { top: 26px; height: 13px; background: var(--take); border-radius: 2px; } #strip .k { top: 26px; height: 13px; background: var(--skip); border-radius: 2px; opacity: .75; }
+  #strip .w { top: 44px; height: 9px; background: #6d7482; width: 1px; }
+  #strip .x { top: 0; bottom: 0; background: rgba(108, 155, 255, .28); border-left: 2px solid var(--sel); border-right: 2px solid var(--sel); }
+  #strip .ph { top: 0; bottom: 0; width: 2px; background: #fff; }
+  #strip .lg { top: 3px; right: 8px; font: 10.5px var(--mono); color: var(--dim); text-align: right; line-height: 13.4px; }
+
+  /* ── transcript ── */
+  #text { flex: 1; overflow-y: auto; padding: 14px 22px 130px; user-select: none; }
+  .blk { display: grid; grid-template-columns: 54px 1fr; gap: 0 8px; margin-bottom: 6px; }
+  .blk .tc { font: 11.5px var(--mono); color: #6b717c; padding-top: 9px; cursor: pointer; }
+  .blk .tc:hover { color: var(--fg); }
+  .blk .body { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 1px; }
+  .tok.w { font-size: 19px; line-height: 1.55; padding: 1px 4px; border-radius: 5px; cursor: pointer; color: #b9bdc6; }
+  .tok.w.seen { color: var(--fg); }
+  .tok.g { position: relative; width: 116px; height: 65px; margin: 3px 4px 3px 0; border-radius: 6px; overflow: hidden; cursor: pointer; background: #23272f center/cover; border: 2px solid transparent; opacity: .72; }
+  .tok.g.seen { opacity: 1; }
+  .tok.g span { position: absolute; left: 0; right: 0; bottom: 0; padding: 9px 5px 2px; font: 10.5px var(--mono); color: #fff; background: linear-gradient(transparent, rgba(0, 0, 0, .78)); }
+  .tok.p { font: 12px var(--mono); line-height: 1; padding: 5px 8px; margin: 0 2px; border-radius: 11px; cursor: pointer; color: #7d838f; background: #1d2128; border: 1px solid #2c313b; white-space: nowrap; }
+  .tok.p.seen { color: #b4b9c3; }
+  .tok.p.ai { box-shadow: none; border-bottom: 3px solid var(--ai); }
+  .tok.p.take { background: rgba(67, 184, 113, .30); border-color: var(--take); color: #effff4; }
+  .tok.p.skip { background: rgba(226, 89, 77, .13); border-color: #6e3a35; color: #8f7572; text-decoration: line-through; }
+  .tok.p.sel { background-color: rgba(108, 155, 255, .30); }
+  .tok.g em { position: absolute; top: 3px; right: 4px; font: 700 10px var(--mono); font-style: normal; padding: 0 4px; border-radius: 3px; display: none; }
+  .tok.ai { box-shadow: inset 0 -3px 0 var(--ai); }
+  .tok.g.ai { box-shadow: none; border-bottom-color: var(--ai); }
+  .tok.w.take { background: rgba(67, 184, 113, .30); color: #effff4; }
+  .tok.w.skip { background: rgba(226, 89, 77, .13); color: #8f7572; text-decoration: line-through; }
+  .tok.g.take { border-color: var(--take); opacity: 1; } .tok.g.take em { display: block; background: var(--take); color: #05210f; }
+  .tok.g.skip { border-color: var(--skip); opacity: .38; filter: grayscale(.8); } .tok.g.skip em { display: block; background: var(--skip); color: #2a0703; }
+  .tok.sel { outline: 2px solid var(--sel); outline-offset: -1px; background-color: rgba(108, 155, 255, .30); }
+  .tok.g.sel { opacity: 1; outline-offset: 0; }
+  .tok.now { box-shadow: inset 0 0 0 2px #fff; }
+  .tok.w.now.ai { box-shadow: inset 0 0 0 2px #fff, inset 0 -5px 0 var(--ai); }
+  .airow { grid-column: 2; display: flex; gap: 8px; align-items: center; margin: 4px 0 2px; padding: 4px 8px; border-left: 3px solid var(--ai); background: rgba(242, 162, 74, .09); border-radius: 0 6px 6px 0; font-size: 13px; }
+  .airow b { color: var(--ai); font: 700 11px var(--mono); letter-spacing: .06em; white-space: nowrap; }
+  .airow .n { flex: 1; color: #e6d9c6; }
+  .airow button { padding: 1px 8px; font-size: 12px; }
+  .airow .done { font: 700 11px var(--mono); }
+
+  /* ── selection bar ── */
+  #bar { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); display: none; gap: 8px; align-items: center; padding: 9px 12px; background: #262b35; border: 1px solid #47506180; border-radius: 12px; box-shadow: 0 14px 40px rgba(0, 0, 0, .6); z-index: 5; max-width: calc(100% - 30px); }
+  #bar.show { display: flex; }
+  #bar .rng { font: 600 13px var(--mono); padding: 0 4px; white-space: nowrap; }
+  #bar input { width: 210px; }
+  #toast { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); background: var(--ai); color: #241300; font-weight: 700; padding: 7px 14px; border-radius: 9px; z-index: 9; display: none; }
+  #help { padding: 8px 14px 0; font-size: 12px; color: var(--dim); line-height: 1.75; }
+  #help b { color: var(--fg); font-weight: 600; }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; vertical-align: baseline; }
+</style>
+</head>
+<body>
+<aside id="side">
+  <header>
+    <h1><bdi data-i18n="appName">Footage Desk</bdi> <span id="ptitle"></span></h1>
+    <div id="totals"></div>
+  </header>
+  <div id="clips"></div>
+  <div id="save" data-i18n="loading">loading…</div>
+</aside>
+<main>
+  <div id="toast"></div>
+  <section id="top">
+    <div id="stage"><video id="v" controls playsinline preload="metadata"></video></div>
+    <div id="panel">
+      <div id="cliphead"></div>
+      <div id="tools"></div>
+      <div id="lists"></div>
+    </div>
+  </section>
+  <section id="strip"></section>
+  <section id="text"></section>
+  <div id="bar"></div>
+</main>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+
+// ───────────────────────── i18n ─────────────────────────
+// Language: ?lang=en|ru wins, else the browser language ("ru*" → ru), else en.
+// Every user-visible string lives in STR; ru holds the original wording verbatim.
+// A value may be a plain string or a plural map {one, few, many, other} picked by vars.n
+// through Intl.PluralRules. Values used via innerHTML may contain markup; plain-text
+// values are inserted with textContent or escaped by the caller.
+const LANG = (() => {
+  const q = new URLSearchParams(location.search).get("lang");
+  if (q === "en" || q === "ru") return q;
+  return (navigator.language || "").toLowerCase().startsWith("ru") ? "ru" : "en";
+})();
+document.documentElement.lang = LANG;
+const LOCALE = LANG === "ru" ? "ru-RU" : "en-US";
+const STR = {
+  en: {
+    appName: "Footage Desk",
+    docTitle: "Footage Desk · {title}",
+    loading: "loading…",
+    durMinSec: "{m} min {s} s",
+    durSec: "{s} s",
+    gapPill: "· {n} s ·",
+    gapTitle: "{a} – {b}, no speech",
+    gapThumb: "{tc} · {n} s",
+    noSpeech: "no speech",
+    emptyClip: "This clip has no words or frames.",
+    aiLabel: "AI",
+    aiLabelQuestion: "AI ASKS",
+    aiLabelNote: "AI · NOTE",
+    defaultNote: "take",
+    stTake: "TAKE",
+    stNo: "SKIP",
+    stNoNeed: "SKIP",
+    btnTake: "take",
+    btnNoNeed: "skip",
+    stripLegend: "watched<br>AI<br>mine<br>speech",
+    sideTake: "take {dur}",
+    totTake: "take",
+    totWatched: "watched",
+    totWatchedVal: "{pct}% of {total}",
+    totAi: "AI suggests",
+    totAiVal: "{dur} · {n} awaiting reply",
+    hdrAi: "AI SUGGESTS",
+    emptyAi: "The AI hasn't picked anything in this clip yet. Mark what you need and it will handle the rest.",
+    question: "question:",
+    replyPh: "reply to the AI…",
+    hdrMine: "MY MARKS",
+    emptyMine: "Select words or frames in the text below → “Take” or “Skip”.",
+    markNotePh: "note for the AI…",
+    removeMark: "remove mark",
+    hdrClipNote: "CLIP NOTE",
+    clipNotePh: "anything for the AI about this clip: “the descent is what matters”, “the whole clip is a miss”…",
+    helpTake: "<b>take</b> — definitely in the video",
+    helpSkip: "<b>skip</b> — definitely not",
+    helpSeen: "<b>watched</b> with no mark — seen it, nothing caught my eye",
+    helpUnseen: "not watched — the AI decides",
+    helpKeys: "<kbd>Space</kbd> pause <kbd>←</kbd><kbd>→</kbd> 2 s <kbd>I</kbd><kbd>O</kbd> in/out <kbd>E</kbd> take <kbd>X</kbd> skip <kbd>⌫</kbd> clear <kbd>P</kbd> play <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> speed <kbd>T</kbd> frames/text <kbd>⇧↑</kbd><kbd>⇧↓</kbd> clip",
+    words: { one: "{n} word", other: "{n} words" },
+    viewTitle: "How to show parts without speech: as frames or compact inline (T)",
+    viewText: "view: text",
+    viewFrames: "view: frames",
+    takesTitle: "Play everything marked “take” in this clip back to back",
+    takesBtn: "▶ selected takes",
+    seenTitle: "Mark the whole clip as watched / unmark",
+    seenAllOn: "✓ fully watched",
+    seenAll: "fully watched",
+    barTake: "Take",
+    barSkip: "Skip",
+    barClear: "Clear",
+    selNotePh: "note (optional)",
+    clearSel: "Clear selection",
+    toastNoTakes: "Nothing in this clip is marked “take” yet",
+    toastAiUpdated: "The AI updated its marks",
+    toastIn: "In: {t} — now press O at the end of the range",
+    toastNeedIn: "Press I first to set the start",
+    saved: "saved {time}",
+    notSaved: "NOT SAVED — server not responding, retrying",
+    ready: "ready · everything saves automatically",
+    loadFailed: "couldn't load the project: {err}",
+  },
+  ru: {
+    appName: "Отбор",
+    docTitle: "Отбор · {title}",
+    loading: "загрузка…",
+    durMinSec: "{m} мин {s} с",
+    durSec: "{s} с",
+    gapPill: "· {n} с ·",
+    gapTitle: "{a} – {b}, без слов",
+    gapThumb: "{tc} · {n} с",
+    noSpeech: "без слов",
+    emptyClip: "В этом клипе нет ни слов, ни кадров.",
+    aiLabel: "ИИ",
+    aiLabelQuestion: "ИИ СПРАШИВАЕТ",
+    aiLabelNote: "ИИ · ЗАМЕТКА",
+    defaultNote: "беру",
+    stTake: "БЕРУ",
+    stNo: "НЕТ",
+    stNoNeed: "НЕ НАДО",
+    btnTake: "беру",
+    btnNoNeed: "не надо",
+    stripLegend: "просмотрено<br>ИИ<br>моё<br>речь",
+    sideTake: "беру {dur}",
+    totTake: "беру",
+    totWatched: "просмотрено",
+    totWatchedVal: "{pct}% из {total}",
+    totAi: "ИИ предлагает",
+    totAiVal: "{dur} · ждут ответа {n}",
+    hdrAi: "ИИ ПРЕДЛАГАЕТ",
+    emptyAi: "В этом клипе ИИ пока ничего не выбрал — отметь, что нужно, остальное он доразметит.",
+    question: "вопрос:",
+    replyPh: "ответить ИИ…",
+    hdrMine: "МОИ ОТМЕТКИ",
+    emptyMine: "Выдели слова или кадры в тексте ниже → «Беру» или «Не беру».",
+    markNotePh: "заметка для ИИ…",
+    removeMark: "убрать отметку",
+    hdrClipNote: "ЗАПИСКА ПО КЛИПУ",
+    clipNotePh: "что угодно для ИИ про этот клип: «тут главное — спуск», «весь клип мимо»…",
+    helpTake: "<b>беру</b> — точно в ролик",
+    helpSkip: "<b>не беру</b> — точно нет",
+    helpSeen: "<b>просмотрено</b> без отметки — видел, не зацепило",
+    helpUnseen: "не просмотрено — ИИ решает сам",
+    helpKeys: "<kbd>пробел</kbd> пауза <kbd>←</kbd><kbd>→</kbd> 2 с <kbd>I</kbd><kbd>O</kbd> начало/конец <kbd>E</kbd> беру <kbd>X</kbd> не беру <kbd>⌫</kbd> сброс <kbd>P</kbd> проиграть <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> скорость <kbd>T</kbd> кадры/текст <kbd>⇧↑</kbd><kbd>⇧↓</kbd> клип",
+    words: "{n} слов",
+    viewTitle: "как показывать куски без слов: кадрами или компактно в строке (T)",
+    viewText: "вид: текст",
+    viewFrames: "вид: кадры",
+    takesTitle: "проиграть подряд всё, что отмечено «беру» в этом клипе",
+    takesBtn: "▶ отобранное",
+    seenTitle: "отметить клип просмотренным целиком / снять",
+    seenAllOn: "✓ просмотрен весь",
+    seenAll: "просмотрен весь",
+    barTake: "Беру",
+    barSkip: "Не беру",
+    barClear: "Сброс",
+    selNotePh: "заметка (необязательно)",
+    clearSel: "снять выделение",
+    toastNoTakes: "В этом клипе пока ничего не отмечено «беру»",
+    toastAiUpdated: "ИИ обновил свои пометки",
+    toastIn: "Начало: {t} — теперь O в конце куска",
+    toastNeedIn: "Сначала I — начало куска",
+    saved: "сохранено {time}",
+    notSaved: "НЕ СОХРАНЕНО — сервер не отвечает, пробую снова",
+    ready: "готово · всё сохраняется само",
+    loadFailed: "не удалось загрузить проект: {err}",
+  },
+};
+const plural = new Intl.PluralRules(LANG);
+function t(key, vars) {
+  let s = STR[LANG][key];
+  if (s == null) { console.warn("i18n: missing key", LANG, key); s = STR.en[key] ?? key; }
+  if (typeof s === "object") s = s[plural.select(vars && vars.n != null ? +vars.n : 0)] ?? s.other;
+  return vars ? s.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? String(vars[k]) : m)) : s;
+}
+function applyI18n(root) {
+  root.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t(el.dataset.i18n); });
+  root.querySelectorAll("[data-i18n-html]").forEach((el) => { el.innerHTML = t(el.dataset.i18nHtml); });
+  root.querySelectorAll("[data-i18n-title]").forEach((el) => { el.title = t(el.dataset.i18nTitle); });
+  root.querySelectorAll("[data-i18n-placeholder]").forEach((el) => { el.placeholder = t(el.dataset.i18nPlaceholder); });
+}
+document.title = t("appName");
+applyI18n(document);
+
+const V = $("v");
+let P = null;                         // manifest: clips, words, frames
+let AI = { clips: {} }, aiMtime = 0;   // the agent's layer (read-only here)
+let U = { version: 1, clips: {}, replies: {} };  // my layer
+let cur = null, tokens = [], tokEls = [];
+let sel = null;                       // {a, b} in seconds
+let mode = null;                      // 'sel' | 'takes' — bounded playback
+let view = "frames"; try { view = localStorage.getItem("otbor.view") || "frames"; } catch (e) { console.warn("localStorage unavailable:", e); }  // "frames" | "text"
+let lastT = null, nowIdx = -1, dirty = false, saveTimer = null, userScrollAt = 0, anchor = null;
+const mem = {};                       // last playhead per clip
+
+const r2 = (x) => Math.round(x * 100) / 100;
+const pad = (n) => String(n).padStart(2, "0");
+const tc = (t) => Math.floor(t / 60) + ":" + pad(Math.floor(t % 60));
+const tcf = (t) => Math.floor(t / 60) + ":" + (t % 60 < 10 ? "0" : "") + (t % 60).toFixed(1);
+const dur = (s) => s >= 60 ? t("durMinSec", { m: Math.floor(s / 60), s: Math.round(s % 60) }) : t("durSec", { s: s >= 10 ? Math.round(s) : s.toFixed(1) });
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const uc = (id) => (U.clips[id] = U.clips[id] || { marks: [], watched: [], note: "" });
+const aiOf = (id) => AI.clips[id] || [];
+const sum = (rs, k) => rs.reduce((s, r) => s + (k ? r.b - r.a : r[1] - r[0]), 0);
+
+// ───────────────────────── ranges ─────────────────────────
+function carve(list, a, b) {
+  const out = [];
+  for (const r of list) {
+    if (r.b <= a || r.a >= b) { out.push(r); continue; }
+    if (r.a < a) out.push({ ...r, b: a });
+    if (r.b > b) out.push({ ...r, a: b });
+  }
+  return out;
+}
+function normalize(list) {
+  list.sort((x, y) => x.a - y.a);
+  const out = [];
+  for (const r of list) {
+    if (r.b - r.a < 0.05) continue;
+    const p = out[out.length - 1];
+    if (p && p.kind === r.kind && r.a - p.b < 0.03) {
+      p.b = Math.max(p.b, r.b);
+      if (r.note && !(p.note || "").includes(r.note)) p.note = p.note ? p.note + "; " + r.note : r.note;
+    } else out.push({ a: r2(r.a), b: r2(r.b), kind: r.kind, note: r.note || "" });
+  }
+  return out;
+}
+function applyMark(kind, a, b, note) {
+  const c = uc(cur.id);
+  let list = carve(c.marks, a, b);
+  if (kind !== "clear") list.push({ a, b, kind, note: note || "" });
+  c.marks = normalize(list);
+  touch(); paint(); drawStrip(); drawLists(); drawSide();
+}
+function addWatched(id, a, b) {
+  const c = uc(id), out = [];
+  let x = [r2(a), r2(b)];
+  for (const r of c.watched) {
+    if (r[1] < x[0] - 0.05 || r[0] > x[1] + 0.05) out.push(r);
+    else x = [Math.min(x[0], r[0]), Math.max(x[1], r[1])];
+  }
+  out.push(x); out.sort((p, q) => p[0] - q[0]);
+  c.watched = out;
+}
+const covered = (rs, a, b) => rs.reduce((s, r) => s + Math.max(0, Math.min(b, r.b ?? r[1]) - Math.max(a, r.a ?? r[0])), 0);
+function markAt(marks, a, b) { // the mark that covers most of [a, b], if it covers at least half
+  let best = null, bv = (b - a) / 2;
+  for (const m of marks) { const o = Math.min(b, m.b) - Math.max(a, m.a); if (o >= bv) { best = m; bv = o; } }
+  return best;
+}
+function aiStatus(id, it) {
+  const m = uc(id).marks, d = it.b - it.a;
+  if (covered(m.filter((x) => x.kind === "take"), it.a, it.b) >= d * 0.8) return "yes";
+  if (covered(m.filter((x) => x.kind === "skip"), it.a, it.b) >= d * 0.8) return "no";
+  return "";
+}
+
+// ───────────────────────── tokens: words + silent chunks with a thumbnail ─────────────────────────
+function buildTokens(c) {
+  const out = [], segs = new Set(c.segs);
+  let t = 0;
+  const gap = (a, b) => { const n = Math.max(1, Math.ceil((b - a) / 6)), st = (b - a) / n; for (let i = 0; i < n; i++) out.push({ g: 1, s: a + i * st, e: a + (i + 1) * st }); };
+  c.words.forEach((w, i) => {
+    const s = w[1], e = Math.max(s + 0.08, Math.min(w[2], s + Math.max(0.42, 0.12 * w[0].length))); // aligner stretches a word over the pause after it
+    if (s - t >= 1.2) gap(t, s);
+    out.push({ w: w[0], s: Math.max(s, t), e, seg: segs.has(i) });
+    t = Math.max(t, e);
+  });
+  if (c.dur - t >= 1.2) gap(t, c.dur); else if (out.length) out[out.length - 1].e = Math.max(out[out.length - 1].e, c.dur - 0.01);
+  return out;
+}
+function frameAt(c, t) {
+  let best = null, bd = 1e9;
+  for (const f of c.frames) { const d = Math.abs(f[0] - t); if (d < bd) { bd = d; best = f[1]; } }
+  return best;
+}
+function tokAt(t) {
+  let lo = 0, hi = tokens.length - 1, ans = -1;
+  while (lo <= hi) { const m = (lo + hi) >> 1; if (tokens[m].s <= t) { ans = m; lo = m + 1; } else hi = m - 1; }
+  return ans >= 0 && t < tokens[ans].e + 0.6 ? ans : -1;
+}
+
+// ───────────────────────── rendering ─────────────────────────
+function drawText() {
+  const box = $("text"); box.innerHTML = ""; tokEls = [];
+  // the agent's remark sits right above the first word/frame it is about
+  const rows = new Map();
+  for (const it of aiOf(cur.id).slice().sort((x, y) => x.a - y.a)) {
+    let i = tokens.findIndex((t) => (t.s + t.e) / 2 > it.a);
+    if (i < 0) i = tokens.length - 1;
+    if (i >= 0) rows.set(i, (rows.get(i) || []).concat(it));
+  }
+  let blk = null, body = null, type = null;
+  const open = (tok, i) => {
+    blk = document.createElement("div"); blk.className = "blk";
+    (rows.get(i) || []).forEach((it) => blk.appendChild(aiRow(it)));
+    const t = document.createElement("div"); t.className = "tc"; t.textContent = tc(tok.s); t.onclick = () => seek(tok.s);
+    body = document.createElement("div"); body.className = "body";
+    blk.append(t, body); box.appendChild(blk);
+  };
+  tokens.forEach((tok, i) => {
+    const txt = view === "text", ty = tok.g && !txt ? "g" : "w"; // text view: pauses stay inside the line
+    if (!blk || ty !== type || (ty === "w" && tok.seg) || rows.has(i)) { open(tok, i); type = ty; }
+    const el = document.createElement(tok.g && !txt ? "div" : "span");
+    el.dataset.i = i;
+    if (tok.g && txt) { el.textContent = t("gapPill", { n: Math.round(tok.e - tok.s) }); el.title = t("gapTitle", { a: tc(tok.s), b: tc(tok.e) }); }
+    else if (tok.g) {
+      const f = frameAt(cur, (tok.s + tok.e) / 2);
+      if (f) el.style.backgroundImage = `url("${f}")`;
+      el.innerHTML = `<em></em><span>${esc(t("gapThumb", { tc: tc(tok.s), n: Math.round(tok.e - tok.s) }))}</span>`;
+    } else el.textContent = tok.w;
+    body.appendChild(el); tokEls.push(el);
+  });
+  if (!tokens.length) box.innerHTML = `<div class="empty">${esc(t("emptyClip"))}</div>`;
+  paint();
+}
+function aiRow(it) {
+  const row = document.createElement("div"); row.className = "airow"; row.dataset.ai = it.id;
+  row.innerHTML = `<b>${esc(t(it.kind === "question" ? "aiLabelQuestion" : it.kind === "note" ? "aiLabelNote" : "aiLabel"))} ${tc(it.a)}</b><span class="n">${esc(it.note || t("defaultNote"))}</span><span class="acts"></span>`;
+  row.querySelector(".n").onclick = () => { setSel(it.a, it.b); seek(it.a); };
+  row.querySelector(".n").style.cursor = "pointer";
+  return row;
+}
+function paintAiRows() {
+  document.querySelectorAll(".airow").forEach((row) => {
+    const it = aiOf(cur.id).find((x) => x.id === row.dataset.ai); if (!it) return;
+    const st = aiStatus(cur.id, it), acts = row.querySelector(".acts");
+    if (it.kind && it.kind !== "pick") { acts.innerHTML = ""; return; }
+    acts.innerHTML = st === "yes" ? `<span class="done" style="color:var(--take)">${esc(t("stTake"))}</span>` : st === "no" ? `<span class="done" style="color:var(--skip)">${esc(t("stNoNeed"))}</span>`
+      : `<button class="take" data-k="take">${esc(t("btnTake"))}</button> <button class="skip" data-k="skip">${esc(t("btnNoNeed"))}</button>`;
+    acts.querySelectorAll("button").forEach((b) => b.onclick = (e) => { e.stopPropagation(); applyMark(b.dataset.k, it.a, it.b, ""); });
+  });
+}
+function paint() {
+  const c = uc(cur.id), items = aiOf(cur.id);
+  tokens.forEach((tok, i) => {
+    const m = markAt(c.marks, tok.s, tok.e), mid = (tok.s + tok.e) / 2, d = tok.e - tok.s;
+    let cl = "tok " + (tok.g ? (view === "text" ? "p" : "g") : "w");
+    if (m) cl += " " + m.kind;
+    if (items.some((x) => mid >= x.a && mid < x.b)) cl += " ai";
+    if (covered(c.watched, tok.s, tok.e) >= d * 0.6) cl += " seen";
+    if (sel && Math.min(tok.e, sel.b) - Math.max(tok.s, sel.a) >= d * 0.5) cl += " sel";
+    if (i === nowIdx) cl += " now";
+    const el = tokEls[i];
+    if (el.className !== cl) el.className = cl;
+    if (tok.g && view !== "text") { const em = el.firstChild; const tx = m ? (m.kind === "take" ? t("stTake") : t("stNo")) : ""; if (em.textContent !== tx) em.textContent = tx; }
+  });
+  paintAiRows();
+}
+const pct = (t) => (t / cur.dur * 100).toFixed(3) + "%";
+function bars(c, u, items, tall) {
+  const p = (t) => (t / c.dur * 100).toFixed(2) + "%", w = (a, b) => `left:${p(a)};width:${p(Math.max(b - a, c.dur * 0.004))}`;
+  return u.watched.map((r) => `<i class="s" style="${w(r[0], r[1])}"></i>`).join("") +
+    items.map((x) => `<i class="a" style="${w(x.a, x.b)}"></i>`).join("") +
+    u.marks.map((m) => `<i class="${m.kind === "take" ? "t" : "k"}" style="${w(m.a, m.b)}"></i>`).join("");
+}
+function drawStrip() {
+  const c = cur, u = uc(c.id);
+  let h = bars(c, u, aiOf(c.id));
+  h += tokens.filter((t) => !t.g).map((t) => `<i class="w" style="left:${pct(t.s)}"></i>`).join("");
+  if (sel) h += `<i class="x" style="left:${pct(sel.a)};width:${pct(sel.b - sel.a)}"></i>`;
+  h += `<i class="ph" id="ph" style="left:${pct(V.currentTime || 0)}"></i><i class="lg">${t("stripLegend")}</i>`;
+  $("strip").innerHTML = h;
+}
+function drawSide() {
+  let html = "", day = null, tTake = 0, tSeen = 0, tAll = 0, tAi = 0, nPend = 0;
+  for (const c of P.clips) {
+    const u = uc(c.id), items = aiOf(c.id);
+    const take = sum(u.marks.filter((m) => m.kind === "take"), 1), seen = sum(u.watched);
+    tTake += take; tSeen += Math.min(seen, c.dur); tAll += c.dur; tAi += sum(items, 1);
+    const pend = items.filter((x) => (!x.kind || x.kind === "pick") ? !aiStatus(c.id, x) : x.kind === "question" && !U.replies[c.id + "/" + x.id]).length;
+    nPend += pend;
+    if (c.day !== day) { day = c.day; html += `<div class="day">${day}</div>`; }
+    const first = c.words.slice(0, 7).map((w) => w[0]).join(" ");
+    html += `<div class="clip${cur && cur.id === c.id ? " cur" : ""}" data-id="${c.id}">
+      <div class="r1"><span class="nm">${c.clock} · ${esc(c.label)}</span><span class="tm">${pend ? `<span style="color:var(--ai)">◆${pend}</span> ` : ""}${covered(u.watched, 0, c.dur) >= c.dur * 0.95 ? "✓ " : ""}${tc(c.dur)}</span></div>
+      <div class="sub">${take ? `<span style="color:var(--take)">${esc(t("sideTake", { dur: dur(take) }))}</span> · ` : ""}${esc(first || t("noSpeech"))}</div>
+      <div class="mini">${bars(c, u, items)}</div></div>`;
+  }
+  $("clips").innerHTML = html;
+  $("clips").querySelectorAll(".clip").forEach((el) => el.onclick = () => openClip(el.dataset.id));
+  $("totals").innerHTML = `<span>${esc(t("totTake"))}</span><b style="color:var(--take)">${esc(dur(tTake))}</b><span>${esc(t("totWatched"))}</span><b>${esc(t("totWatchedVal", { pct: Math.round(tSeen / tAll * 100), total: dur(tAll) }))}</b><span>${esc(t("totAi"))}</span><b style="color:var(--ai)">${esc(t("totAiVal", { dur: dur(tAi), n: nPend }))}</b>`;
+}
+function drawLists() {
+  const c = cur, u = uc(c.id), items = aiOf(c.id);
+  let h = `<div class="lh"><span>${esc(t("hdrAi"))}</span><span>${items.length || ""}</span></div>`;
+  if (!items.length) h += `<div class="empty">${esc(t("emptyAi"))}</div>`;
+  items.forEach((x, i) => {
+    const st = aiStatus(c.id, x), key = c.id + "/" + x.id;
+    h += `<div class="item" data-ai="${i}"><div class="bar" style="background:var(--ai)"></div><div><div class="tc">${tcf(x.a)} – ${tcf(x.b)} · ${dur(x.b - x.a)}</div><div class="nt">${x.kind === "question" ? `<b style="color:var(--ai)">${esc(t("question"))}</b> ` : ""}${esc(x.note || t("defaultNote"))}</div>
+      <input type="text" placeholder="${esc(t("replyPh"))}" data-reply="${esc(key)}" value="${esc(U.replies[key] || "")}"></div>
+      <div class="acts">${x.kind && x.kind !== "pick" ? "" : st === "yes" ? `<span class="st" style="color:var(--take)">${esc(t("stTake"))}</span>` : st === "no" ? `<span class="st" style="color:var(--skip)">${esc(t("stNo"))}</span>` : '<button class="take" data-k="take">✓</button><button class="skip" data-k="skip">✕</button>'}</div></div>`;
+  });
+  h += `<div class="lh"><span>${esc(t("hdrMine"))}</span><span>${u.marks.length || ""}</span></div>`;
+  if (!u.marks.length) h += `<div class="empty">${esc(t("emptyMine"))}</div>`;
+  u.marks.forEach((m, i) => {
+    h += `<div class="item" data-m="${i}"><div class="bar" style="background:var(--${m.kind})"></div><div><div class="tc">${tcf(m.a)} – ${tcf(m.b)} · ${dur(m.b - m.a)}</div>
+      <input type="text" placeholder="${esc(t("markNotePh"))}" data-note="${i}" value="${esc(m.note || "")}"></div><div class="acts"><button data-del="${i}" title="${esc(t("removeMark"))}">×</button></div></div>`;
+  });
+  h += `<div class="lh"><span>${esc(t("hdrClipNote"))}</span></div><textarea id="clipnote" placeholder="${esc(t("clipNotePh"))}">${esc(u.note || "")}</textarea>`;
+  h += `<div id="help"><span class="dot" style="background:var(--take)"></span>${t("helpTake")} · <span class="dot" style="background:var(--skip)"></span>${t("helpSkip")}<br>
+    <span class="dot" style="background:var(--seen)"></span>${t("helpSeen")}<br>${t("helpUnseen")}<br>
+    ${t("helpKeys")}</div>`;
+  const L = $("lists"), keep = L.scrollTop; L.innerHTML = h; L.scrollTop = keep;
+  L.querySelectorAll("[data-ai]").forEach((el) => {
+    const x = items[+el.dataset.ai];
+    el.onclick = (e) => { if (e.target.tagName === "INPUT") return; setSel(x.a, x.b); seek(x.a); scrollToTime(x.a); };
+    el.querySelectorAll("button").forEach((b) => b.onclick = (e) => { e.stopPropagation(); applyMark(b.dataset.k, x.a, x.b, ""); });
+  });
+  L.querySelectorAll("[data-m]").forEach((el) => {
+    const m = u.marks[+el.dataset.m];
+    el.onclick = (e) => { if (e.target.tagName === "INPUT" || e.target.tagName === "BUTTON") return; setSel(m.a, m.b); seek(m.a); scrollToTime(m.a); };
+  });
+  L.querySelectorAll("[data-del]").forEach((b) => b.onclick = () => { const m = u.marks[+b.dataset.del]; applyMark("clear", m.a, m.b); });
+  L.querySelectorAll("[data-note]").forEach((inp) => inp.oninput = () => { u.marks[+inp.dataset.note].note = inp.value; touch(); });
+  L.querySelectorAll("[data-reply]").forEach((inp) => inp.oninput = () => { if (inp.value) U.replies[inp.dataset.reply] = inp.value; else delete U.replies[inp.dataset.reply]; touch(); });
+  $("clipnote").oninput = (e) => { u.note = e.target.value; touch(); };
+}
+function drawHead() {
+  const c = cur, u = uc(c.id);
+  $("cliphead").innerHTML = `<div class="t">${esc(c.label)} · ${c.day} ${c.clock}</div><div class="m">${c.id} · ${tc(c.dur)} · ${esc(t("words", { n: c.words.length }))}</div>`;
+  const rate = V.playbackRate, all = covered(u.watched, 0, c.dur) >= c.dur - 0.5;
+  $("tools").innerHTML = [1, 1.5, 2, 3].map((r) => `<button data-rate="${r}" class="${rate === r ? "on" : ""}">${r}×</button>`).join("") +
+    `<button id="bview" title="${esc(t("viewTitle"))}">${esc(t(view === "text" ? "viewText" : "viewFrames"))}</button>
+     <button id="btakes" title="${esc(t("takesTitle"))}">${esc(t("takesBtn"))}</button>
+     <button id="bseen" class="${all ? "on" : ""}" title="${esc(t("seenTitle"))}">${esc(t(all ? "seenAllOn" : "seenAll"))}</button>`;
+  $("tools").querySelectorAll("[data-rate]").forEach((b) => b.onclick = () => { V.playbackRate = +b.dataset.rate; drawHead(); });
+  $("btakes").onclick = playTakes;
+  $("bview").onclick = toggleView;
+  $("bseen").onclick = () => { if (all) u.watched = []; else u.watched = [[0, c.dur]]; touch(); paint(); drawStrip(); drawSide(); drawHead(); };
+}
+function toggleView() {
+  view = view === "text" ? "frames" : "text";
+  try { localStorage.setItem("otbor.view", view); } catch (e) { console.warn("localStorage unavailable:", e); }
+  const t = V.currentTime;
+  drawHead(); drawText(); scrollToTime(t);
+}
+function drawBar() {
+  const bar = $("bar");
+  if (!sel) { bar.className = ""; return; }
+  const had = document.activeElement && document.activeElement.id === "selnote", old = had ? document.activeElement.value : "";
+  bar.className = "show";
+  bar.innerHTML = `<span class="rng">${tcf(sel.a)} → ${tcf(sel.b)} · ${dur(sel.b - sel.a)}</span>
+    <button id="bplay">▶<kbd>P</kbd></button><button id="btake" class="take">${esc(t("barTake"))}<kbd>E</kbd></button><button id="bskip" class="skip">${esc(t("barSkip"))}<kbd>X</kbd></button>
+    <button id="bclr">${esc(t("barClear"))}<kbd>⌫</kbd></button><input type="text" id="selnote" placeholder="${esc(t("selNotePh"))}" value="${esc(old)}"><button id="bx" title="${esc(t("clearSel"))}">Esc</button>`;
+  $("bplay").onclick = playSel; $("btake").onclick = () => act("take"); $("bskip").onclick = () => act("skip"); $("bclr").onclick = () => act("clear"); $("bx").onclick = () => setSel(null);
+  $("selnote").onkeydown = (e) => { if (e.key === "Enter") act("take"); if (e.key === "Escape") e.target.blur(); e.stopPropagation(); };
+  if (had) $("selnote").focus();
+}
+
+// ───────────────────────── actions ─────────────────────────
+function setSel(a, b) {
+  sel = a == null ? null : { a: r2(Math.max(0, Math.min(a, b))), b: r2(Math.min(cur.dur, Math.max(a, b))) };
+  if (sel && sel.b - sel.a < 0.05) sel = null;
+  paint(); drawStrip(); drawBar();
+}
+function act(kind) {
+  if (!sel) return;
+  const note = $("selnote") ? $("selnote").value.trim() : "";
+  const s = sel; sel = null; mode = null;
+  applyMark(kind, s.a, s.b, kind === "clear" ? "" : note);
+  drawBar();
+}
+function seek(t) { V.currentTime = Math.max(0, Math.min(cur.dur - 0.05, t)); lastT = null; }
+function playSel() { if (!sel) return; mode = "sel"; seek(sel.a); V.play(); }
+function playTakes() {
+  const ts = uc(cur.id).marks.filter((m) => m.kind === "take");
+  if (!ts.length) return toast(t("toastNoTakes"));
+  mode = "takes"; seek(ts[0].a); V.play();
+}
+function scrollToTime(t) {
+  const i = tokAt(t); if (i < 0) return;
+  tokEls[i].scrollIntoView({ block: "center", behavior: "smooth" }); userScrollAt = 0;
+}
+function openClip(id, t) {
+  if (cur) mem[cur.id] = V.currentTime;
+  cur = P.clips.find((c) => c.id === id) || P.clips[0];
+  sel = null; mode = null; lastT = null; nowIdx = -1; anchor = null;
+  tokens = buildTokens(cur);
+  const rate = V.playbackRate || 1;
+  V.src = cur.video; V.playbackRate = rate;
+  const at = t != null ? t : mem[cur.id] || 0;
+  V.onloadedmetadata = () => { V.playbackRate = rate; if (at) V.currentTime = at; };
+  drawHead(); drawText(); drawStrip(); drawLists(); drawSide(); drawBar();
+  $("text").scrollTop = 0;
+  const el = document.querySelector(".clip.cur"); if (el) el.scrollIntoView({ block: "nearest" });
+  try { localStorage.setItem("otbor.cur", cur.id); } catch (e) { console.warn("localStorage unavailable:", e); }
+}
+function step(d) { const i = P.clips.indexOf(cur) + d; if (i >= 0 && i < P.clips.length) openClip(P.clips[i].id); }
+function toast(t) { const el = $("toast"); el.textContent = t; el.style.display = "block"; clearTimeout(toast.t); toast.t = setTimeout(() => el.style.display = "none", 3200); }
+
+// ───────────────────────── saving & syncing ─────────────────────────
+function touch() { dirty = true; clearTimeout(saveTimer); saveTimer = setTimeout(save, 700); try { localStorage.setItem("otbor.user", JSON.stringify(U)); } catch (e) { console.warn("localStorage unavailable:", e); } }
+async function save() {
+  if (!dirty) return;
+  dirty = false;
+  try {
+    U.updated = new Date().toISOString();
+    const r = await fetch("/api/user", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(U) });
+    if (!r.ok) throw new Error(r.status);
+    const s = $("save"); s.className = ""; s.textContent = t("saved", { time: new Date().toLocaleTimeString(LOCALE) });
+  } catch (e) {
+    dirty = true; const s = $("save"); s.className = "err"; s.textContent = t("notSaved");
+    clearTimeout(saveTimer); saveTimer = setTimeout(save, 3000);
+  }
+}
+async function poll() {
+  try {
+    const p = await (await fetch("/api/poll")).json();
+    if (p.agent !== aiMtime) {
+      const first = !aiMtime;
+      const c = await (await fetch("/api/agent")).json(); AI = c.data; aiMtime = c.mtime;
+      if (!first && cur) { tokens = buildTokens(cur); drawText(); drawStrip(); drawLists(); drawSide(); toast(t("toastAiUpdated")); }
+    }
+  } catch (e) { console.warn("poll failed, retrying:", e); }
+}
+
+// ───────────────────────── playback loop ─────────────────────────
+let lastPaint = 0;
+function track() { // what actually played counts as watched; a seek resets the run
+  if (!cur) return;
+  const t = V.currentTime;
+  if (V.paused || V.seeking) { lastT = null; return; }
+  if (lastT != null && t > lastT && t - lastT < 4 * V.playbackRate + 1) { addWatched(cur.id, lastT, t); dirty = true; }
+  lastT = t;
+  if (mode === "sel" && sel && t >= sel.b) { V.pause(); mode = null; }
+  if (mode === "takes") {
+    const ts = uc(cur.id).marks.filter((m) => m.kind === "take"), inside = ts.find((m) => t >= m.a - 0.05 && t < m.b);
+    if (!inside) { const nx = ts.find((m) => m.a > t); if (nx) seek(nx.a); else { V.pause(); mode = null; } }
+  }
+}
+V.addEventListener("timeupdate", track);
+V.addEventListener("play", () => { lastT = V.currentTime; });
+function tick(now) {
+  requestAnimationFrame(tick);
+  if (!cur) return;
+  const t = V.currentTime, ph = $("ph");
+  if (ph) ph.style.left = pct(t);
+  track();
+  const i = tokAt(t);
+  if (i !== nowIdx) {
+    if (nowIdx >= 0 && tokEls[nowIdx]) tokEls[nowIdx].classList.remove("now");
+    nowIdx = i;
+    if (i >= 0) { tokEls[i].classList.add("now"); if (!V.paused && now - userScrollAt > 2500) { const r = tokEls[i].getBoundingClientRect(), b = $("text").getBoundingClientRect(); if (r.top < b.top + 30 || r.bottom > b.bottom - 150) tokEls[i].scrollIntoView({ block: "center", behavior: "smooth" }); } }
+  }
+  if (now - lastPaint > 1200 && !V.paused) { lastPaint = now; paint(); drawStrip(); if (dirty) { clearTimeout(saveTimer); saveTimer = setTimeout(save, 1500); } }
+}
+V.addEventListener("seeking", () => { lastT = null; });
+V.addEventListener("pause", () => { paint(); drawStrip(); drawSide(); if (dirty) save(); });
+
+// ───────────────────────── mouse: words, thumbnails, strip ─────────────────────────
+let drag = null;
+const tokIdx = (e) => { const el = e.target.closest(".tok"); return el ? +el.dataset.i : -1; };
+$("text").addEventListener("mousedown", (e) => {
+  const i = tokIdx(e); if (i < 0 || e.button) return;
+  if (e.shiftKey && anchor != null) { drag = { a: anchor, b: i, moved: true }; selTok(drag.a, drag.b); return; }
+  drag = { a: i, b: i, moved: false };
+});
+$("text").addEventListener("mousemove", (e) => {
+  if (!drag || !(e.buttons & 1)) return;
+  const i = tokIdx(e); if (i < 0 || i === drag.b) return;
+  drag.b = i; drag.moved = true; selTok(drag.a, drag.b);
+});
+window.addEventListener("mouseup", () => {
+  if (!drag) return;
+  if (!drag.moved) { anchor = drag.a; seek(tokens[drag.a].s); if (sel) setSel(null); }
+  else anchor = drag.a;
+  drag = null;
+});
+$("text").addEventListener("dblclick", (e) => { // the whole phrase / the whole silent stretch
+  const i = tokIdx(e); if (i < 0) return;
+  const kids = [...tokEls[i].parentNode.children].map((el) => +el.dataset.i);
+  selTok(kids[0], kids[kids.length - 1]);
+});
+function selTok(i, j) { const a = Math.min(i, j), b = Math.max(i, j); setSel(tokens[a].s, tokens[b].e); }
+$("text").addEventListener("scroll", () => { userScrollAt = performance.now(); }, { passive: true });
+$("text").addEventListener("wheel", () => { userScrollAt = performance.now(); }, { passive: true });
+
+let sdrag = null;
+const stripT = (e) => { const r = $("strip").getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * cur.dur; };
+$("strip").addEventListener("mousedown", (e) => { sdrag = { t0: stripT(e), moved: false }; });
+window.addEventListener("mousemove", (e) => { if (!sdrag) return; const t = stripT(e); if (Math.abs(t - sdrag.t0) > cur.dur * 0.004) { sdrag.moved = true; setSel(sdrag.t0, t); } });
+window.addEventListener("mouseup", (e) => { if (!sdrag) return; if (!sdrag.moved) { seek(stripT(e)); scrollToTime(stripT(e)); } sdrag = null; });
+
+// ───────────────────────── keyboard ─────────────────────────
+let selIn = null;
+window.addEventListener("keydown", (e) => {
+  if (!cur || e.metaKey || e.ctrlKey) return;
+  const tag = document.activeElement.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA") { if (e.key === "Escape") document.activeElement.blur(); return; }
+  const k = e.key.toLowerCase(), code = e.code;
+  const stop = () => { e.preventDefault(); if (document.activeElement === V) V.blur(); };
+  if (code === "Space") { stop(); mode = null; V.paused ? V.play() : V.pause(); }
+  else if (code === "ArrowLeft") { stop(); seek(V.currentTime - (e.shiftKey ? 10 : 2)); }
+  else if (code === "ArrowRight") { stop(); seek(V.currentTime + (e.shiftKey ? 10 : 2)); }
+  else if (code === "ArrowUp" && e.shiftKey) { stop(); step(-1); }
+  else if (code === "ArrowDown" && e.shiftKey) { stop(); step(1); }
+  else if (code === "KeyI") { stop(); selIn = V.currentTime; if (sel && sel.b > selIn) setSel(selIn, sel.b); else toast(t("toastIn", { t: tcf(selIn) })); }
+  else if (code === "KeyO") { stop(); const a = selIn != null && selIn < V.currentTime ? selIn : sel ? sel.a : null; if (a == null) toast(t("toastNeedIn")); else setSel(a, V.currentTime); }
+  else if (code === "KeyE" || code === "Enter") { stop(); act("take"); }
+  else if (code === "KeyX") { stop(); act("skip"); }
+  else if (code === "Backspace" || code === "Delete") { stop(); act("clear"); }
+  else if (code === "KeyP") { stop(); sel ? playSel() : playTakes(); }
+  else if (code === "KeyN" && sel) { stop(); $("selnote").focus(); }
+  else if (code === "Escape") { stop(); setSel(null); mode = null; }
+  else if (code === "KeyT") { stop(); toggleView(); }
+  else if (["1", "2", "3", "4"].includes(k)) { stop(); V.playbackRate = [1, 1.5, 2, 3][+k - 1]; drawHead(); }
+});
+window.addEventListener("beforeunload", () => { if (dirty) navigator.sendBeacon && fetch("/api/user", { method: "PUT", keepalive: true, headers: { "Content-Type": "application/json" }, body: JSON.stringify(U) }); });
+
+// ───────────────────────── boot ─────────────────────────
+(async function () {
+  try {
+    P = await (await fetch("/api/project")).json();
+    const u = await (await fetch("/api/user")).json(); U = u.data; U.clips = U.clips || {}; U.replies = U.replies || {};
+    await poll();
+    $("ptitle").textContent = "· " + P.title; document.title = t("docTitle", { title: P.title });
+    let id = null; try { id = localStorage.getItem("otbor.cur"); } catch (e) { console.warn("localStorage unavailable:", e); }
+    const q = new URLSearchParams(location.search);  // ?clip=GX011520 or ?day=11.10 opens right there
+    const want = q.get("clip") || (P.clips.find((c) => c.day === q.get("day")) || {}).id;
+    if (want && P.clips.some((c) => c.id === want)) id = want;
+    openClip(id || P.clips[0].id);
+    $("save").textContent = t("ready");
+    setInterval(poll, 2500);
+    requestAnimationFrame(tick);
+  } catch (e) { $("save").className = "err"; $("save").textContent = t("loadFailed", { err: e.message }); }
+})();
+</script>
+</body>
+</html>

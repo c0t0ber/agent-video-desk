@@ -1,0 +1,146 @@
+{
+ "language": "en",
+ "segments": [
+  {
+   "id": 0,
+   "start": 0.0,
+   "end": 5.44,
+   "text": "We made it, the wind up here is crazy, I can barely stand, but look at this view, every",
+   "words": [
+    {
+     "word": "We",
+     "start": 0.0,
+     "end": 0.2
+    },
+    {
+     "word": "made",
+     "start": 0.2,
+     "end": 0.42
+    },
+    {
+     "word": "it,",
+     "start": 0.42,
+     "end": 0.66
+    },
+    {
+     "word": "the",
+     "start": 0.82,
+     "end": 1.0
+    },
+    {
+     "word": "wind",
+     "start": 1.0,
+     "end": 1.16
+    },
+    {
+     "word": "up",
+     "start": 1.16,
+     "end": 1.38
+    },
+    {
+     "word": "here",
+     "start": 1.38,
+     "end": 1.54
+    },
+    {
+     "word": "is",
+     "start": 1.54,
+     "end": 1.78
+    },
+    {
+     "word": "crazy,",
+     "start": 1.78,
+     "end": 2.1
+    },
+    {
+     "word": "I",
+     "start": 2.52,
+     "end": 2.64
+    },
+    {
+     "word": "can",
+     "start": 2.64,
+     "end": 2.86
+    },
+    {
+     "word": "barely",
+     "start": 2.86,
+     "end": 3.22
+    },
+    {
+     "word": "stand,",
+     "start": 3.22,
+     "end": 3.62
+    },
+    {
+     "word": "but",
+     "start": 3.92,
+     "end": 4.08
+    },
+    {
+     "word": "look",
+     "start": 4.08,
+     "end": 4.24
+    },
+    {
+     "word": "at",
+     "start": 4.24,
+     "end": 4.42
+    },
+    {
+     "word": "this",
+     "start": 4.42,
+     "end": 4.6
+    },
+    {
+     "word": "view,",
+     "start": 4.6,
+     "end": 4.96
+    },
+    {
+     "word": "every",
+     "start": 5.24,
+     "end": 5.44
+    }
+   ]
+  },
+  {
+   "id": 1,
+   "start": 5.44,
+   "end": 7.06,
+   "text": "meter of pushing was worth it.",
+   "words": [
+    {
+     "word": "meter",
+     "start": 5.44,
+     "end": 5.7
+    },
+    {
+     "word": "of",
+     "start": 5.7,
+     "end": 5.94
+    },
+    {
+     "word": "pushing",
+     "start": 5.94,
+     "end": 6.18
+    },
+    {
+     "word": "was",
+     "start": 6.18,
+     "end": 6.5
+    },
+    {
+     "word": "worth",
+     "start": 6.5,
+     "end": 6.7
+    },
+    {
+     "word": "it.",
+     "start": 6.7,
+     "end": 7.06
+    }
+   ]
+  }
+ ]
+}

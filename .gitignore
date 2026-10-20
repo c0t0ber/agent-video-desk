@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.ruff_cache/
+
+# demo output (built by the desks)
+examples/demo/_work/
+examples/demo/script.md

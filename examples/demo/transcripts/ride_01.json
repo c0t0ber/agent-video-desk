@@ -1,0 +1,157 @@
+{
+ "language": "en",
+ "segments": [
+  {
+   "id": 0,
+   "start": 0.0,
+   "end": 5.34,
+   "text": "So the plan for today is simple, ride to the lighthouse, eat something, and come back before",
+   "words": [
+    {
+     "word": "So",
+     "start": 0.0,
+     "end": 0.3
+    },
+    {
+     "word": "the",
+     "start": 0.3,
+     "end": 0.5
+    },
+    {
+     "word": "plan",
+     "start": 0.5,
+     "end": 0.76
+    },
+    {
+     "word": "for",
+     "start": 0.76,
+     "end": 0.98
+    },
+    {
+     "word": "today",
+     "start": 0.98,
+     "end": 1.2
+    },
+    {
+     "word": "is",
+     "start": 1.2,
+     "end": 1.5
+    },
+    {
+     "word": "simple,",
+     "start": 1.5,
+     "end": 1.84
+    },
+    {
+     "word": "ride",
+     "start": 2.26,
+     "end": 2.3
+    },
+    {
+     "word": "to",
+     "start": 2.3,
+     "end": 2.5
+    },
+    {
+     "word": "the",
+     "start": 2.5,
+     "end": 2.66
+    },
+    {
+     "word": "lighthouse,",
+     "start": 2.66,
+     "end": 2.98
+    },
+    {
+     "word": "eat",
+     "start": 3.56,
+     "end": 3.62
+    },
+    {
+     "word": "something,",
+     "start": 3.62,
+     "end": 4.02
+    },
+    {
+     "word": "and",
+     "start": 4.32,
+     "end": 4.52
+    },
+    {
+     "word": "come",
+     "start": 4.52,
+     "end": 4.72
+    },
+    {
+     "word": "back",
+     "start": 4.72,
+     "end": 4.96
+    },
+    {
+     "word": "before",
+     "start": 4.96,
+     "end": 5.34
+    }
+   ]
+  },
+  {
+   "id": 1,
+   "start": 5.34,
+   "end": 5.68,
+   "text": "dark.",
+   "words": [
+    {
+     "word": "dark.",
+     "start": 5.34,
+     "end": 5.68
+    }
+   ]
+  },
+  {
+   "id": 2,
+   "start": 5.98,
+   "end": 6.46,
+   "text": "That's it.",
+   "words": [
+    {
+     "word": "That's",
+     "start": 5.98,
+     "end": 6.28
+    },
+    {
+     "word": "it.",
+     "start": 6.28,
+     "end": 6.46
+    }
+   ]
+  },
+  {
+   "id": 3,
+   "start": 6.66,
+   "end": 7.62,
+   "text": "That's the whole plan.",
+   "words": [
+    {
+     "word": "That's",
+     "start": 6.66,
+     "end": 6.96
+    },
+    {
+     "word": "the",
+     "start": 6.96,
+     "end": 7.12
+    },
+    {
+     "word": "whole",
+     "start": 7.12,
+     "end": 7.34
+    },
+    {
+     "word": "plan.",
+     "start": 7.34,
+     "end": 7.62
+    }
+   ]
+  }
+ ]
+}

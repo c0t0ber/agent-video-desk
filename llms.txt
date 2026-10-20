@@ -1,0 +1,17 @@
+# Agent Video Desk
+
+> Agent skills and a plugin for Claude Code and OpenAI Codex: local browser desks where a human and an AI agent co-edit a video script (Script Desk) and pick footage by word-level transcript (Footage Desk), plus verbatim Russian speech-to-text with word timestamps (ru-transcribe). Python standard library, runs on 127.0.0.1, no accounts.
+
+Install: `/plugin marketplace add c0t0ber/agent-video-desk` (Claude Code), `codex plugin marketplace add c0t0ber/agent-video-desk` (Codex), or `npx skills add c0t0ber/agent-video-desk` (any agent).
+
+## Skills
+
+- [Script Desk](https://github.com/c0t0ber/agent-video-desk/blob/main/skills/script-desk/SKILL.md): human notes on a script → Fix → agent proposes edits via `cli.py propose` → human takes/skips → immutable version snapshot. Commands: init, read, text, propose, note, watch, wait.
+- [Footage Desk](https://github.com/c0t0ber/agent-video-desk/blob/main/skills/footage-desk/SKILL.md): clips + word-level transcript in the browser; human marks take/skip; agent reads marks and proposes picks; `read --ranges` exports takes for a cut list. Commands: build, text, read, propose. Reads any Whisper/WhisperX JSON.
+- [ru-transcribe](https://github.com/c0t0ber/agent-video-desk/blob/main/skills/ru-transcribe/SKILL.md): GigaAM-v3 CTC verbatim text + WhisperX forced alignment; Whisper-compatible JSON/TXT/SRT; helpers repeats.py, peek.py, compare.py for finding retakes and dirty cuts.
+
+## Docs
+
+- [README](https://github.com/c0t0ber/agent-video-desk/blob/main/README.md): overview, install, demo, how it works, FAQ
+- [AGENTS.md](https://github.com/c0t0ber/agent-video-desk/blob/main/AGENTS.md): repository layout, conventions, tests
+- [Demo project](https://github.com/c0t0ber/agent-video-desk/tree/main/examples/demo): script draft, three clips, transcripts

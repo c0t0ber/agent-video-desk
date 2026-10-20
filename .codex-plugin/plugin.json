@@ -1,0 +1,25 @@
+{
+  "name": "agent-video-desk",
+  "version": "0.1.0",
+  "description": "Shared browser desks for an AI agent (Claude Code, Codex) and a human: co-edit a video script, pick footage by transcript words, and transcribe Russian speech verbatim with word timestamps.",
+  "author": { "name": "roktober", "url": "https://github.com/c0t0ber" },
+  "homepage": "https://github.com/c0t0ber/agent-video-desk",
+  "repository": "https://github.com/c0t0ber/agent-video-desk",
+  "license": "MIT",
+  "keywords": ["claude-code","codex","agent-skills","video-editing","paper-edit","text-based-editing","transcript","script-writing","whisper","whisperx","word-timestamps","russian","youtube","human-in-the-loop"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Agent Video Desk",
+    "shortDescription": "Co-edit scripts and pick footage with your agent",
+    "longDescription": "Script Desk: leave notes on a video script in the browser, press Fix, and your agent proposes edits you take or skip; every accepted round becomes a version snapshot. Footage Desk: watch clips next to their word-level transcript, mark takes and skips, and let the agent pick the rest and build the cut list. ru-transcribe: verbatim Russian speech-to-text with word timestamps (GigaAM + WhisperX).",
+    "developerName": "roktober",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Write"],
+    "websiteURL": "https://github.com/c0t0ber/agent-video-desk",
+    "defaultPrompt": [
+      "Open Script Desk for the script in this folder",
+      "Build Footage Desk from the clips in this folder",
+      "Transcribe this Russian recording with word timestamps"
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "agent-video-desk",
+  "description": "Agent Video Desk — browser desks for co-editing video scripts and picking footage by transcript with Claude Code or Codex.",
+  "owner": {
+    "name": "roktober",
+    "url": "https://github.com/c0t0ber"
+  },
+  "plugins": [
+    {
+      "name": "agent-video-desk",
+      "source": "./",
+      "description": "Shared browser desks for an AI agent (Claude Code, Codex) and a human: co-edit a video script, pick footage by transcript words, and transcribe Russian speech verbatim with word timestamps.",
+      "category": "productivity"
+    }
+  ]
+}

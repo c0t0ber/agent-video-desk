@@ -1,0 +1,1014 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Script Desk</title>
+<style>
+  :root {
+    --bg: #121418; --panel: #1a1d23; --panel2: #20242c; --line: #2c313b; --fg: #ebe8e2; --dim: #8d929d;
+    --ai: #f2c94c; --me: #6c9bff; --cl: #f2a24a; --ins: #43b871; --del: #e2594d; --sel: #6c9bff;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--fg); font: 14px/1.4 -apple-system, system-ui, "Segoe UI", sans-serif; overflow: hidden; }
+  button { font: inherit; color: var(--fg); background: var(--panel2); border: 1px solid var(--line); border-radius: 7px; padding: 6px 11px; cursor: pointer; white-space: nowrap; }
+  button:hover { border-color: #4a5160; background: #262b34; }
+  button:disabled { opacity: .45; cursor: default; }
+  button.on { background: #33405c; border-color: var(--sel); }
+  button.go { background: #2a4a35; border-color: var(--ins); color: #d6f5e0; font-weight: 600; }
+  button.ai { border-color: var(--ai); color: #fbe9b0; }
+  button.me { border-color: var(--me); color: #d4e1ff; }
+  button.small { padding: 2px 8px; font-size: 12px; }
+  button.mic.rec { background: #6b1f1a; border-color: #ff5a4d; color: #fff; animation: pulse 1.2s infinite; }
+  kbd { font: 11px var(--mono); background: #2b303a; border: 1px solid #3a404c; border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; color: #cfd3da; margin-left: 5px; }
+  textarea, input[type=text] { font: inherit; color: var(--fg); background: #15181d; border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; width: 100%; }
+  textarea:focus, input:focus { outline: none; border-color: var(--sel); }
+  body { display: grid; grid-template-columns: 1fr 400px; }
+
+  /* ── main column ── */
+  main { display: flex; flex-direction: column; min-width: 0; height: 100vh; }
+  #bar { display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-bottom: 1px solid var(--line); background: var(--panel); flex-wrap: wrap; }
+  #bar h1 { font-size: 16px; font-weight: 700; margin-right: 6px; }
+  #bar h1 #pname { color: var(--dim); font-weight: 500; }
+  #bar .sp { flex: 1; }
+  .chip { font: 12px var(--mono); padding: 3px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--dim); }
+  .chip.warn { color: #ffe1a8; border-color: #7a5a1f; }
+  .chip.wait { color: #fbe9b0; border-color: var(--ai); animation: pulse 1.6s infinite; }
+  .chip.ok { color: #d6f5e0; border-color: var(--ins); }
+  @keyframes pulse { 50% { opacity: .55; } }
+  #scroll { flex: 1; overflow-y: auto; position: relative; }
+  #doc { max-width: 780px; margin: 0 auto; padding: 28px 34px 40vh; font-size: 16.5px; line-height: 1.62; }
+  #doc .ln { min-height: 1.62em; white-space: pre-wrap; word-wrap: break-word; }
+  #doc .ln.empty { min-height: .7em; }
+  #doc .h1 { font-size: 26px; font-weight: 750; line-height: 1.3; margin-top: 10px; }
+  #doc .h2 { font-size: 21px; font-weight: 700; line-height: 1.35; margin-top: 18px; padding-top: 10px; border-top: 1px solid var(--line); }
+  #doc .h3 { font-size: 17.5px; font-weight: 700; margin-top: 8px; }
+  #doc .quote { border-left: 3px solid #4a5160; padding-left: 12px; color: #d8d4cc; font-style: italic; }
+  #doc .li { padding-left: 14px; text-indent: -14px; }
+  #doc .hr { color: var(--dim); text-align: center; }
+  #doc .tbl { font: 13px var(--mono); color: #cfd3da; }
+  #doc .mk { color: #5a606c; font-weight: 400; font-style: normal; }
+  #doc .b { font-weight: 700; }
+  #doc .scr { color: #9fb6e6; font-style: italic; }
+  #doc .tc { color: #9fb6e6; text-decoration: underline dotted; cursor: pointer; }
+  #doc .n-ai { background: rgba(242, 201, 76, .17); border-bottom: 2px solid var(--ai); cursor: pointer; }
+  #doc .n-me { background: rgba(108, 155, 255, .15); border-bottom: 2px solid var(--me); cursor: pointer; }
+  #doc .n-c { background: rgba(242, 162, 74, .14); border-bottom: 2px dashed var(--cl); cursor: pointer; }
+  #doc .flash { animation: flash 1.2s 2; }
+  @keyframes flash { 50% { background: rgba(255, 255, 255, .28); } }
+  #doc .del { background: rgba(226, 89, 77, .18); color: #ffb3ab; text-decoration: line-through; text-decoration-color: rgba(255, 140, 130, .8); cursor: pointer; }
+  #doc .ins { background: rgba(67, 184, 113, .2); color: #c9f3d8; cursor: pointer; }
+  #doc .del.off { background: none; color: var(--fg); text-decoration: none; outline: 1px dashed #4a5160; }
+  #doc .ins.off { background: none; color: #5d6470; text-decoration: line-through; }
+  #doc .ro .del, #doc .ro .ins { cursor: default; }
+  #doc [data-n]::before { content: attr(data-n); font: 700 10.5px var(--mono); color: #121418; background: var(--ins); border-radius: 4px; padding: 0 4px; margin-right: 3px; vertical-align: 2px; text-decoration: none; display: inline-block; }
+  #doc .off[data-n]::before { background: #5d6470; }
+  #doc .cur-edit { outline: 2px solid #fff; outline-offset: 1px; }
+  #editor { display: none; max-width: 820px; margin: 0 auto; padding: 22px 30px; height: 100%; }
+  #editor textarea { height: calc(100vh - 140px); font-size: 15.5px; line-height: 1.6; resize: none; padding: 14px 16px; }
+  body.editing #doc { display: none; } body.editing #editor { display: block; }
+
+  /* ── side panel ── */
+  #side { display: flex; flex-direction: column; border-left: 1px solid var(--line); background: var(--panel); height: 100vh; min-height: 0; }
+  #tabs { display: flex; gap: 4px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  #tabs button { flex: 1; padding: 5px 4px; font-size: 13px; }
+  #tabs b { font: 600 11px var(--mono); color: var(--dim); margin-left: 4px; }
+  .pane { flex: 1; overflow-y: auto; display: none; padding: 6px 0 30px; min-height: 0; }
+  .pane.cur { display: block; }
+  .lh { padding: 12px 14px 4px; font: 700 11px var(--mono); letter-spacing: .1em; color: var(--dim); display: flex; justify-content: space-between; align-items: center; }
+  .card { margin: 4px 10px; padding: 8px 10px; border-radius: 8px; background: var(--panel2); border: 1px solid var(--line); border-left-width: 3px; }
+  .card.ai { border-left-color: var(--ai); } .card.me { border-left-color: var(--me); } .card.cl { border-left-color: var(--cl); }
+  .card.done { opacity: .55; }
+  .card.lost .q::after { content: var(--t-lost); /* text set from STR by applyI18n() */ color: var(--del); font-style: normal; }
+  .card .q { font-size: 12px; color: var(--dim); font-style: italic; cursor: pointer; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .card .q:hover { color: var(--fg); }
+  .card .t { margin-top: 4px; font-size: 13.5px; white-space: pre-wrap; cursor: text; }
+  .card .ans { margin-top: 6px; padding: 6px 8px; border-radius: 6px; background: #2a2620; border: 1px solid #4d3d22; font-size: 13px; white-space: pre-wrap; }
+  .card .ans::before { content: var(--t-ai-label); /* text set from STR by applyI18n() */ color: var(--cl); font-weight: 700; }
+  .card .acts { margin-top: 6px; display: flex; gap: 5px; flex-wrap: wrap; }
+  .card textarea { margin-top: 5px; font-size: 13px; min-height: 52px; resize: vertical; }
+  .empty { padding: 6px 14px; color: var(--dim); font-size: 12.5px; }
+  .edit { margin: 5px 10px; padding: 8px 10px; border-radius: 8px; background: var(--panel2); border: 1px solid var(--line); cursor: pointer; }
+  .edit.off { opacity: .55; }
+  .edit.cur { border-color: #fff; }
+  .edit .r1 { display: flex; gap: 8px; align-items: baseline; }
+  .edit .num { font: 700 11px var(--mono); color: #121418; background: var(--ins); border-radius: 4px; padding: 0 5px; }
+  .edit.off .num { background: #5d6470; }
+  .edit .why { font-size: 13.5px; flex: 1; }
+  .edit .nt { font-size: 12px; color: var(--dim); margin-top: 3px; }
+  .edit .pv { margin-top: 5px; font-size: 12.5px; line-height: 1.45; max-height: 7.5em; overflow: hidden; }
+  .edit .pv s { color: #ff9d94; } .edit .pv u { color: #9fe3b8; text-decoration: none; }
+  #summary { margin: 8px 12px; font-size: 13.5px; }
+  #acceptbox { position: sticky; bottom: 0; padding: 10px 12px; background: var(--panel); border-top: 1px solid var(--line); display: flex; gap: 6px; }
+  #acceptbox button.go { flex: 1; }
+  .ver { padding: 8px 14px; cursor: pointer; border-left: 3px solid transparent; }
+  .ver:hover { background: #20242b; }
+  .ver.cur { background: #252a34; border-left-color: var(--sel); }
+  .ver .r1 { display: flex; justify-content: space-between; } .ver b { font: 700 13px var(--mono); }
+  .ver .m { font: 11.5px var(--mono); color: var(--dim); }
+  .ver .s { font-size: 12.5px; color: #cfd3da; margin-top: 2px; }
+  #rec { padding: 8px 12px; border-bottom: 1px solid var(--line); position: sticky; top: -6px; z-index: 2; background: var(--panel); }
+  #rec audio { width: 100%; height: 34px; }
+  #rec .row { display: flex; gap: 6px; align-items: center; margin-top: 6px; font-size: 12px; color: var(--dim); }
+  .seg { padding: 4px 14px 5px; cursor: pointer; font-size: 13px; line-height: 1.4; }
+  .seg:hover { background: #20242b; }
+  .seg.cur { background: #252a34; }
+  .seg i { font: 11.5px var(--mono); color: var(--dim); font-style: normal; margin-right: 6px; }
+
+  /* ── popover / toast / help ── */
+  #pop { position: fixed; z-index: 20; width: 340px; background: var(--panel); border: 1px solid #4a5160; border-radius: 10px; padding: 10px; box-shadow: 0 10px 40px rgba(0,0,0,.55); display: none; }
+  #pop .q { font-size: 12px; color: var(--dim); font-style: italic; margin-bottom: 6px; max-height: 3.2em; overflow: hidden; }
+  #pop textarea { min-height: 64px; resize: vertical; }
+  #pop .acts { display: flex; gap: 6px; margin-top: 7px; }
+  #pop .acts button { flex: 1; font-size: 12.5px; padding: 5px 6px; }
+  #fixpop { position: fixed; z-index: 20; width: 360px; top: 52px; background: var(--panel); border: 1px solid #4a5160; border-radius: 10px; padding: 12px; box-shadow: 0 10px 40px rgba(0,0,0,.55); display: none; }
+  #fixpop p { font-size: 13px; color: var(--dim); margin-bottom: 8px; }
+  #fixpop .acts { display: flex; gap: 6px; margin-top: 8px; } #fixpop .acts button.go { flex: 1; }
+  #toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: #2a2f39; border: 1px solid #4a5160; padding: 9px 16px; border-radius: 9px; display: none; z-index: 30; max-width: 70vw; }
+  #toast.err { background: #8f2b22; border-color: #c4453a; }
+  #help { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: none; z-index: 40; align-items: center; justify-content: center; }
+  #help .box { background: var(--panel); border: 1px solid #4a5160; border-radius: 12px; padding: 20px 24px; max-width: 560px; font-size: 14px; line-height: 1.55; }
+  #help h2 { font-size: 17px; margin-bottom: 8px; } #help li { margin-left: 18px; margin-top: 4px; }
+</style>
+</head>
+<body>
+<main>
+  <div id="bar">
+    <h1><span data-i18n="app"></span> <span id="pname"></span></h1>
+    <span class="chip" id="verchip"></span>
+    <span class="chip warn" id="draftchip" style="display:none" data-i18n="chip.draft"></span>
+    <span class="chip" id="fixchip" style="display:none"></span>
+    <span class="sp"></span>
+    <button id="bDiff" data-i18n-title="bar.diff.title" data-i18n="bar.diff"></button>
+    <button id="bProp" style="display:none" data-i18n-title="bar.prop.title" data-i18n="bar.prop"></button>
+    <button id="bVoice" class="mic" data-i18n-title="bar.voice.title">🎙 <span data-i18n="bar.voice"></span><kbd>R</kbd></button>
+    <button id="bEdit" data-i18n-title="bar.edit.title"><span data-i18n="bar.edit"></span><kbd>E</kbd></button>
+    <button id="bFix" class="ai" data-i18n-title="bar.fix.title"><span data-i18n="bar.fix"></span><kbd>F</kbd></button>
+    <button id="bHelp" class="small">?</button>
+  </div>
+  <div id="scroll">
+    <div id="doc"></div>
+    <div id="editor"><textarea id="ed" spellcheck="true"></textarea></div>
+  </div>
+</main>
+<aside id="side">
+  <div id="tabs">
+    <button data-tab="notes" class="on"><span data-i18n="tab.notes"></span><b id="cNotes"></b></button>
+    <button data-tab="edits"><span data-i18n="tab.edits"></span><b id="cEdits"></b></button>
+    <button data-tab="rec" data-i18n="tab.rec"></button>
+    <button data-tab="vers"><span data-i18n="tab.vers"></span><b id="cVers"></b></button>
+  </div>
+  <div class="pane cur" id="p-notes"></div>
+  <div class="pane" id="p-edits"></div>
+  <div class="pane" id="p-rec"><div id="rec"></div><div id="segs"></div></div>
+  <div class="pane" id="p-vers"></div>
+</aside>
+<div id="pop">
+  <div class="q" id="popq"></div>
+  <textarea id="popt" data-i18n-placeholder="pop.placeholder"></textarea>
+  <div class="acts">
+    <button class="ai" id="popAi"><span data-i18n="pop.ai"></span><kbd>↵</kbd></button>
+    <button class="me" id="popMe"><span data-i18n="pop.me"></span><kbd>⇧↵</kbd></button>
+    <button class="mic" id="popMic" data-i18n-title="pop.mic.title">🎙</button>
+    <button id="popX">Esc</button>
+  </div>
+</div>
+<div id="fixpop">
+  <p id="fixinfo"></p>
+  <textarea id="fixc" data-i18n-placeholder="fix.placeholder"></textarea>
+  <div class="acts"><button class="go" id="fixGo"><span data-i18n="fix.go"></span><kbd>⌘↵</kbd></button><button class="mic" id="fixMic">🎙</button><button id="fixX">Esc</button></div>
+</div>
+<div id="toast"></div>
+<div id="help"><div class="box">
+  <h2 data-i18n="help.title"></h2>
+  <ul>
+    <li data-i18n-html="help.select"></li>
+    <li data-i18n-html="help.edit"></li>
+    <li data-i18n-html="help.fix"></li>
+    <li data-i18n-html="help.accept"></li>
+    <li data-i18n-html="help.voice"></li>
+    <li data-i18n-html="help.timecodes"></li>
+    <li data-i18n-html="help.file"></li>
+  </ul>
+</div></div>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const fmt = t => { t = Math.max(0, t); const m = Math.floor(t / 60), s = Math.floor(t % 60); return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`; };
+const now = () => new Date().toLocaleString("sv-SE").slice(0, 19);
+
+/* ── i18n: every user-visible string lives in STR ──
+   Language: ?lang=en|ru wins, else navigator.language starting with "ru" → ru, otherwise en.
+   t(key, vars) fills {name} placeholders; tn(key, n, vars) also picks a plural form when the entry is an array
+   (en: [one, other]; ru: [one, few, many]). A plain string entry is used as is for any n.
+   Keys used with data-i18n-html and the help.* keys contain trusted markup; all other values are plain text. */
+const LANG = (() => {
+  const q = new URLSearchParams(location.search).get("lang");
+  if (q === "en" || q === "ru") return q;
+  if (q) console.warn(`i18n: unsupported ?lang=${q}, falling back to auto-detect`);
+  return (navigator.language || "").toLowerCase().startsWith("ru") ? "ru" : "en";
+})();
+document.documentElement.lang = LANG;
+const STR = {
+  en: {
+    "app": "Script Desk",
+    "chip.draft": "hand edits",
+    "chip.viewing": "viewing {v} (old, read-only)",
+    "chip.words": ["{n} word", "{n} words"],
+    "chip.fixEdits": ["fix #{f}: {n} edit from AI", "fix #{f}: {n} edits from AI"],
+    "chip.fixStale": "fix #{f}: text changed, edits are out of date — press Fix again",
+    "chip.fixWait": "fix #{f}: AI is thinking…",
+    "bar.diff": "What changed",
+    "bar.diff.title": "Show what changed since the previous version",
+    "bar.prop": "AI edits",
+    "bar.prop.title": "Show AI edits right in the text",
+    "bar.voice": "Dictate",
+    "bar.voice.title": "Dictate a general note for the whole script",
+    "bar.edit": "Edit text",
+    "bar.edit.title": "Edit the text by hand",
+    "bar.fix": "Fix",
+    "bar.fix.title": "Send notes to the AI",
+    "tab.notes": "Notes",
+    "tab.edits": "Edits",
+    "tab.rec": "Recording",
+    "tab.vers": "Versions",
+    "pop.placeholder": "What's wrong here / what to do",
+    "pop.ai": "For AI",
+    "pop.me": "To self",
+    "pop.mic.title": "Dictate the note text",
+    "fix.placeholder": "General comment for this fix (optional)",
+    "fix.go": "Send to AI",
+    "fix.info": "The AI will get {n} {notes} for AI{draft}. It will send edits, you decide which to take.",
+    "fix.info.notes": ["note", "notes"],
+    "fix.info.draft": " and your hand edits",
+    "help.title": "How it works",
+    "help.select": "Select a piece of text → a note <b>for AI</b> (the AI will fix it) or a <b>note to self</b> (the AI leaves it alone, only takes it into account).",
+    "help.edit": "<b>Edit text</b> <kbd>E</kbd> — edit by hand. This goes into the next version together with the AI edits.",
+    "help.fix": "<b>Fix</b> <kbd>F</kbd> — the AI gets all notes for AI and proposes edits. They show up in the “Edits” tab and right in the text.",
+    "help.accept": "Click an edit in the text or in the list — take / skip. <b>Accept</b> saves a new version snapshot: your hand edits + the AI edits you marked.",
+    "help.voice": "<b>🎙</b> — dictate by voice: in the note box (for the selected piece), “Dictate” at the top <kbd>R</kbd> (a general note for the whole script), in the fix and in replies to the AI. Click again to stop; the text appears in a few seconds.",
+    "help.timecodes": "Timecodes in the text are clickable — the recording plays from that point.",
+    "help.file": "The current version always lives in <code>{mirror}</code> in the project folder.",
+    "css.lost": " · place lost",
+    "css.aiLabel": "AI: ",
+    "quoted": "“{q}”",
+    "note.whole": "whole script",
+    "note.empty": "(empty)",
+    "note.fixedBy": "AI edits: {list}",
+    "note.editNo": "#{n}",
+    "note.reply": "Reply to AI",
+    "note.reopen": "reopen",
+    "note.close": "close",
+    "note.undone": "reopen",
+    "note.done": "done",
+    "note.toMe": "→ to self",
+    "note.toAi": "→ for AI",
+    "note.delete": "delete",
+    "note.voice": "▶ voice",
+    "note.confirmDelete": "Delete this note?",
+    "notes.hint": "Select text to leave a note",
+    "notes.hideClosed": "hide closed",
+    "notes.showClosed": "show closed",
+    "notes.forAi": "FOR AI",
+    "notes.fromAi": "FROM AI",
+    "notes.toMe": "TO SELF",
+    "notes.empty": "empty",
+    "edits.stale": "The AI edits were made for a different text: you edited by hand after the fix. Press “Fix” again.",
+    "edits.none": "No edits yet. Leave notes for AI and press “Fix”.",
+    "edits.saveDraft": "Save hand edits as v{v}",
+    "edits.fixMade": "fix #{f} · {made}",
+    "edits.header": "EDITS · {on} of {total}",
+    "edits.all": "all",
+    "edits.noneBtn": "none",
+    "edits.take": "take",
+    "edits.skip": "skip",
+    "edits.forNote": "for note: {text}",
+    "edits.accept": "Accept → v{v}",
+    "edits.acceptDraft": " (+ hand edits)",
+    "vers.current": " · current",
+    "rec.noTranscript": "No transcript in this project (transcripts/*.json).",
+    "rec.noAudio": "no audio for {name}",
+    "rec.segments": ["{name} · {n} segment", "{name} · {n} segments"],
+    "rec.follow": "follow",
+    "toast.notSaved": "Not saved: {msg} — notes are kept in the browser for now",
+    "toast.agentEdits": "AI sent edits: {n}. Mark the ones you take and press “Accept”",
+    "toast.noteLost": "Couldn't find this note's place in the text",
+    "toast.fixSent": "Sent to AI. Edits will show up on their own.",
+    "toast.saved": "Saved {v}",
+    "toast.notAccepted": "Not accepted: {msg}",
+    "toast.alreadyRec": "Already recording — stop it first",
+    "toast.noMic": "No microphone access: {msg}",
+    "toast.nothingHeard": "Didn't catch anything",
+    "toast.voiceFail": "Couldn't transcribe the voice: {msg}",
+    "toast.generalNote": "General note added",
+    "toast.popClosed": "The note box was closed, text: {text}",
+    "mic.transcribing": "transcribing…",
+    "load.fail": "Failed to load: {msg}",
+  },
+  ru: {
+    "app": "Правка",
+    "chip.draft": "ручные правки",
+    "chip.viewing": "смотришь {v} (старая, только чтение)",
+    "chip.words": "{n} слов",
+    "chip.fixEdits": "фикс №{f}: {n} правок от ИИ",
+    "chip.fixStale": "фикс №{f}: текст менялся, правки устарели — жми Фикс ещё раз",
+    "chip.fixWait": "фикс №{f}: ИИ думает…",
+    "bar.diff": "Что поменялось",
+    "bar.diff.title": "Показать, что поменялось относительно прошлой версии",
+    "bar.prop": "Правки ИИ",
+    "bar.prop.title": "Показать правки ИИ прямо в тексте",
+    "bar.voice": "Наговорить",
+    "bar.voice.title": "Наговорить общую заметку на весь сценарий",
+    "bar.edit": "Править текст",
+    "bar.edit.title": "Править текст руками",
+    "bar.fix": "Фикс",
+    "bar.fix.title": "Отдать заметки ИИ",
+    "tab.notes": "Заметки",
+    "tab.edits": "Правки",
+    "tab.rec": "Запись",
+    "tab.vers": "Версии",
+    "pop.placeholder": "Что тут не так / что сделать",
+    "pop.ai": "Для ИИ",
+    "pop.me": "Себе",
+    "pop.mic.title": "Наговорить текст заметки",
+    "fix.placeholder": "Общий комментарий к фиксу (можно пусто)",
+    "fix.go": "Отдать ИИ",
+    "fix.info": "ИИ получит {n} {notes} для ИИ{draft}. Он пришлёт правки, ты решишь, какие брать.",
+    "fix.info.notes": ["заметку", "заметки", "заметок"],
+    "fix.info.draft": " и твои ручные правки",
+    "help.title": "Как работать",
+    "help.select": "Выдели кусок текста → заметка <b>для ИИ</b> (ИИ её исправит) или <b>себе</b> (ИИ не трогает, только учитывает).",
+    "help.edit": "<b>Править текст</b> <kbd>E</kbd> — правишь руками. Это попадает в следующую версию вместе с правками ИИ.",
+    "help.fix": "<b>Фикс</b> <kbd>F</kbd> — ИИ получает все заметки для ИИ и предлагает правки. Они появятся во вкладке «Правки» и прямо в тексте.",
+    "help.accept": "Клик по правке в тексте или в списке — беру / не беру. <b>Принять</b> сохраняет новую версию-слепок: твои ручные правки + отмеченные правки ИИ.",
+    "help.voice": "<b>🎙</b> — наговорить голосом: в окошке заметки (на выделенный кусок), сверху «Наговорить» <kbd>R</kbd> (общая заметка на весь сценарий), в фиксе и в ответах ИИ. Второй клик — стоп, через несколько секунд появится текст.",
+    "help.timecodes": "Таймкоды в тексте кликаются — играет запись с этого места.",
+    "help.file": "Текущая версия всегда лежит в <code>{mirror}</code> в папке проекта.",
+    "css.lost": " · место потеряно",
+    "css.aiLabel": "ИИ: ",
+    "quoted": "«{q}»",
+    "note.whole": "на весь сценарий",
+    "note.empty": "(пусто)",
+    "note.fixedBy": "правки ИИ: {list}",
+    "note.editNo": "№{n}",
+    "note.reply": "Ответить ИИ",
+    "note.reopen": "открыть",
+    "note.close": "закрыть",
+    "note.undone": "вернуть",
+    "note.done": "готово",
+    "note.toMe": "→ себе",
+    "note.toAi": "→ для ИИ",
+    "note.delete": "удалить",
+    "note.voice": "▶ голос",
+    "note.confirmDelete": "Удалить заметку?",
+    "notes.hint": "выдели текст, чтобы оставить заметку",
+    "notes.hideClosed": "скрыть закрытые",
+    "notes.showClosed": "показать закрытые",
+    "notes.forAi": "ДЛЯ ИИ",
+    "notes.fromAi": "ОТ ИИ",
+    "notes.toMe": "СЕБЕ",
+    "notes.empty": "пусто",
+    "edits.stale": "Правки ИИ делались под другой текст: после фикса ты правил руками. Нажми «Фикс» ещё раз.",
+    "edits.none": "Правок нет. Оставь заметки для ИИ и нажми «Фикс».",
+    "edits.saveDraft": "Сохранить ручные правки как v{v}",
+    "edits.fixMade": "фикс №{f} · {made}",
+    "edits.header": "ПРАВКИ · {on} из {total}",
+    "edits.all": "все",
+    "edits.noneBtn": "ни одной",
+    "edits.take": "беру",
+    "edits.skip": "не беру",
+    "edits.forNote": "на заметку: {text}",
+    "edits.accept": "Принять → v{v}",
+    "edits.acceptDraft": " (+ ручные правки)",
+    "vers.current": " · текущая",
+    "rec.noTranscript": "В проекте нет расшифровки (transcripts/*.json).",
+    "rec.noAudio": "нет звука для {name}",
+    "rec.segments": "{name} · {n} кусков",
+    "rec.follow": "вести",
+    "toast.notSaved": "Не сохранилось: {msg} — заметки пока в браузере",
+    "toast.agentEdits": "ИИ прислал правки: {n}. Отметь, какие берёшь, и жми «Принять»",
+    "toast.noteLost": "Место этой заметки в тексте не найдено",
+    "toast.fixSent": "Отдал ИИ. Правки появятся сами.",
+    "toast.saved": "Сохранил {v}",
+    "toast.notAccepted": "Не принял: {msg}",
+    "toast.alreadyRec": "Уже пишу — сначала останови запись",
+    "toast.noMic": "Нет доступа к микрофону: {msg}",
+    "toast.nothingHeard": "Ничего не расслышал",
+    "toast.voiceFail": "Голос не расшифровался: {msg}",
+    "toast.generalNote": "Общая заметка добавлена",
+    "toast.popClosed": "Окошко закрылось, текст: {text}",
+    "mic.transcribing": "расшифровываю…",
+    "load.fail": "Не загрузилось: {msg}",
+  },
+};
+// Plural form index per language. ru keeps the original rule of this page (1 → one, 2..4 → few, else many).
+const PLURAL = { en: n => (n === 1 ? 0 : 1), ru: n => (n === 1 ? 0 : n > 1 && n < 5 ? 1 : 2) };
+function str(key) {
+  if (key in STR[LANG]) return STR[LANG][key];
+  console.warn(`i18n: missing "${key}" for ${LANG}, using en`);
+  if (key in STR.en) return STR.en[key];
+  console.error(`i18n: unknown key "${key}"`);
+  return key;
+}
+// Single pass, so a substituted value that itself contains {x} is never expanded again.
+const fill = (s, vars) => s.replace(/\{(\w+)\}/g, (m, k) => (vars && k in vars ? String(vars[k]) : m));
+const t = (key, vars) => { const v = str(key); return fill(Array.isArray(v) ? v[v.length - 1] : v, vars); };
+const tn = (key, n, vars) => {
+  const v = str(key);
+  const s = Array.isArray(v) ? (v[PLURAL[LANG](n)] ?? v[v.length - 1]) : v;
+  return fill(s, { n, ...vars });
+};
+function applyI18n() { // static markup: filled once on load
+  document.title = t("app");
+  document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll("[data-i18n-html]").forEach(el => { el.innerHTML = t(el.dataset.i18nHtml); });
+  document.querySelectorAll("[data-i18n-title]").forEach(el => { el.title = t(el.dataset.i18nTitle); });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach(el => { el.placeholder = t(el.dataset.i18nPlaceholder); });
+  // CSS ::before/::after labels read these custom properties; JSON.stringify yields a valid quoted CSS string here
+  const root = document.documentElement.style;
+  root.setProperty("--t-lost", JSON.stringify(t("css.lost")));
+  root.setProperty("--t-ai-label", JSON.stringify(t("css.aiLabel")));
+}
+applyI18n();
+
+let P = null, U = null, C = { notes: [], proposal: null };
+const texts = {};               // version name → text
+let latest = null, view = null; // view: the version on screen
+let W = "", Whash = "";         // working text = hand edits over the latest version
+let showDiff = false, showProp = true, curEdit = null;
+let userMtime = 0, agentMtime = 0, dirty = false, saveTimer = null;
+let tab = "notes", seg = -1;
+
+/* ── data ── */
+async function getJSON(u) { const r = await fetch(u); if (!r.ok) throw new Error(u + " " + r.status); return r.json(); }
+async function loadVersion(n) { if (!(n in texts)) texts[n] = (await getJSON("/api/version/" + n)).text; return texts[n]; }
+async function sha1(s) { const h = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(s)); return [...new Uint8Array(h)].map(b => b.toString(16).padStart(2, "0")).join(""); }
+async function refreshW() {
+  const base = await loadVersion(latest);
+  if (U.base !== latest) { U.base = latest; U.draft = null; }
+  W = U.draft != null ? U.draft : base;
+  Whash = await sha1(W);
+  reanchor();
+}
+function anchorIn(text, n) {
+  const q = n.quote || ""; if (!q) return null;
+  if (text.substr(n.start, q.length) === q) return n.start;
+  let best = null, i = text.indexOf(q);
+  while (i >= 0) { if (best === null || Math.abs(i - n.start) < Math.abs(best - n.start)) best = i; i = text.indexOf(q, i + 1); }
+  return best;
+}
+function reanchor() { // notes follow the text when it changes; a note whose words are gone is "lost"
+  let changed = false;
+  for (const n of U.notes) {
+    if (n.done || !n.quote) continue; // a general note has no place in the text
+    const a = anchorIn(W, n);
+    if (a === null) { if (!n.lost) { n.lost = true; changed = true; } }
+    else if (a !== n.start || n.lost) { n.start = a; n.end = a + n.quote.length; n.lost = false; changed = true; }
+  }
+  if (changed) touch();
+}
+function proposal() { // the agent's edits, only if they were made for exactly this text
+  const p = C.proposal;
+  if (!p || p.base !== latest || p.base_hash !== Whash) return null;
+  return p;
+}
+function staleProposal() { const p = C.proposal; return p && p.base === latest && p.base_hash !== Whash && !(U.fix && U.fix.accepted === p.id); }
+const taken = e => (U.decisions[e.id] || "take") === "take";
+
+/* ── markdown-ish decoration over a string (no characters hidden, so offsets stay 1:1) ── */
+function mdRanges(str) {
+  const lines = [], ranges = [];
+  let pos = 0;
+  for (const line of str.split("\n")) {
+    let cls = "";
+    let m;
+    if ((m = line.match(/^(#{1,6}) /))) { cls = "h" + Math.min(3, m[1].length); ranges.push({ a: pos, b: pos + m[0].length, cls: "mk" }); }
+    else if (/^> /.test(line)) { cls = "quote"; ranges.push({ a: pos, b: pos + 2, cls: "mk" }); }
+    else if (/^\s*[-*] /.test(line)) { cls = "li"; }
+    else if (/^\s*\d+\. /.test(line)) { cls = "li"; }
+    else if (/^-{3,}\s*$/.test(line)) { cls = "hr"; }
+    else if (/^\|/.test(line)) { cls = "tbl"; }
+    lines.push({ start: pos, cls: line.length ? cls : "empty" });
+    for (const r of line.matchAll(/\*\*([^*\n]+?)\*\*/g)) {
+      const a = pos + r.index;
+      ranges.push({ a, b: a + 2, cls: "mk" }, { a: a + 2, b: a + r[0].length - 2, cls: "b" }, { a: a + r[0].length - 2, b: a + r[0].length, cls: "mk" });
+    }
+    for (const r of line.matchAll(/\[[^\]\n]{2,}\]/g)) ranges.push({ a: pos + r.index, b: pos + r.index + r[0].length, cls: "scr" });
+    if (P.audio) for (const r of line.matchAll(/(?<![\d:])(\d{1,2}):([0-5]\d)(?![\d:])/g))
+      ranges.push({ a: pos + r.index, b: pos + r.index + r[0].length, cls: "tc", t: +r[1] * 60 + +r[2] });
+    pos += line.length + 1;
+  }
+  return { lines, ranges };
+}
+
+/* Paint `str` into #doc. ranges: {a, b, cls, note?, edit?, t?}. withOffsets: spans carry data-s so a selection maps back to W. */
+function paintDoc(str, extra, withOffsets, ro) {
+  const md = mdRanges(str);
+  const ranges = md.ranges.concat(extra);
+  const cuts = new Set([0, str.length]);
+  for (const r of ranges) { cuts.add(r.a); cuts.add(r.b); }
+  for (let i = 0; i < str.length; i++) if (str[i] === "\n") { cuts.add(i); cuts.add(i + 1); }
+  const bs = [...cuts].filter(x => x >= 0 && x <= str.length).sort((x, y) => x - y);
+  const byStart = ranges.slice().sort((x, y) => x.a - y.a);
+  const html = [];
+  let li = 0, open = false, ri = 0, active = [];
+  const seenEdit = new Set();
+  const openLine = i => { html.push(`<div class="ln ${md.lines[i].cls}">`); open = true; };
+  if (md.lines.length) openLine(0);
+  for (let k = 0; k < bs.length - 1; k++) {
+    const p = bs[k], q = bs[k + 1];
+    if (str[p] === "\n") { // close the line, open the next
+      html.push(open ? "</div>" : ""); open = false; li++;
+      if (li < md.lines.length) openLine(li);
+      continue;
+    }
+    while (ri < byStart.length && byStart[ri].a <= p) active.push(byStart[ri++]);
+    active = active.filter(r => r.b > p);
+    const cover = active.filter(r => r.a <= p && r.b >= q);
+    const cls = [...new Set(cover.map(r => r.cls).join(" ").split(" ").filter(Boolean))];
+    const attrs = [];
+    if (withOffsets) attrs.push(`data-s="${p}"`);
+    const notes = cover.filter(r => r.note).map(r => r.note);
+    if (notes.length) attrs.push(`data-notes="${notes.join(" ")}"`);
+    const ed = cover.find(r => r.edit);
+    if (ed) { attrs.push(`data-edit="${ed.edit}"`); if (!seenEdit.has(ed.edit) && ed.num) { seenEdit.add(ed.edit); attrs.push(`data-n="${ed.num}"`); } }
+    const tc = cover.find(r => r.t != null);
+    if (tc) attrs.push(`data-t="${tc.t}"`);
+    html.push(`<span class="${cls.join(" ")}" ${attrs.join(" ")}>${esc(str.slice(p, q))}</span>`);
+  }
+  if (open) html.push("</div>");
+  const doc = $("doc");
+  doc.className = ro ? "ro" : "";
+  doc.innerHTML = html.join("");
+  doc.querySelectorAll(".ln.empty:empty").forEach(d => d.innerHTML = "<br>");
+}
+
+/* ── diff: lines first, then words inside the changed blocks (keeps Myers small) ── */
+function myers(a, b) {
+  const n = a.length, m = b.length, max = n + m, off = max + 1;
+  const v = new Int32Array(2 * max + 3), trace = [];
+  for (let d = 0; d <= max; d++) {
+    trace.push(v.slice());
+    for (let k = -d; k <= d; k += 2) {
+      let x = (k === -d || (k !== d && v[off + k - 1] < v[off + k + 1])) ? v[off + k + 1] : v[off + k - 1] + 1;
+      let y = x - k;
+      while (x < n && y < m && a[x] === b[y]) { x++; y++; }
+      v[off + k] = x;
+      if (x >= n && y >= m) {
+        const ops = []; let X = n, Y = m;
+        for (let D = d; D > 0; D--) {
+          const vv = trace[D], K = X - Y;
+          const prevK = (K === -D || (K !== D && vv[off + K - 1] < vv[off + K + 1])) ? K + 1 : K - 1;
+          const px = vv[off + prevK], py = px - prevK;
+          while (X > px && Y > py) { ops.push(["eq", a[--X]]); Y--; }
+          if (X === px) ops.push(["ins", b[--Y]]); else ops.push(["del", a[--X]]);
+        }
+        while (X > 0) { ops.push(["eq", a[--X]]); Y--; }
+        return ops.reverse();
+      }
+    }
+  }
+  return [];
+}
+const words = s => s.match(/[\p{L}\p{N}]+|\s+|[^\p{L}\p{N}\s]/gu) || [];
+function diffText(a, b) { // → [[op, text]]
+  const la = a.split(/(?<=\n)/), lb = b.split(/(?<=\n)/);
+  const lops = myers(la, lb), out = [];
+  const push = (op, t) => { if (!t) return; const l = out[out.length - 1]; if (l && l[0] === op) l[1] += t; else out.push([op, t]); };
+  for (let i = 0; i < lops.length;) {
+    if (lops[i][0] === "eq") { push("eq", lops[i][1]); i++; continue; }
+    let da = "", db = "";
+    while (i < lops.length && lops[i][0] !== "eq") { if (lops[i][0] === "del") da += lops[i][1]; else db += lops[i][1]; i++; }
+    if (da && db && da.length + db.length < 20000) for (const [op, t] of myers(words(da), words(db))) push(op, t);
+    else { push("del", da); push("ins", db); }
+  }
+  return out;
+}
+function diffComposite(ops) {
+  let str = ""; const ranges = [];
+  for (const [op, t] of ops) { const a = str.length; str += t; if (op !== "eq") ranges.push({ a, b: str.length, cls: op }); }
+  return { str, ranges };
+}
+function locate16(text, e) {
+  if (text.substr(e.at16, e.old.length) === e.old) return e.at16;
+  let best = null, i = text.indexOf(e.old);
+  while (i >= 0) { if (best === null || Math.abs(i - e.at16) < Math.abs(best - e.at16)) best = i; i = text.indexOf(e.old, i + 1); }
+  return best;
+}
+function proposalComposite(p) {
+  const eds = p.edits.map((e, i) => ({ e, i, a: locate16(W, e) })).filter(x => x.a !== null).sort((x, y) => x.a - y.a);
+  let str = "", pos = 0; const ranges = [];
+  for (const { e, i, a } of eds) {
+    str += W.slice(pos, a);
+    const on = taken(e), first = { edit: e.id, num: i + 1 };
+    if (e.old) { const s = str.length; str += e.old; ranges.push({ a: s, b: str.length, cls: on ? "del" : "del off", ...first }); first.num = 0; }
+    if (e.new) { const s = str.length; str += e.new; ranges.push({ a: s, b: str.length, cls: on ? "ins" : "ins off", ...first }); }
+    pos = a + e.old.length;
+  }
+  str += W.slice(pos);
+  return { str, ranges };
+}
+
+/* ── draw ── */
+function noteRanges() {
+  const out = [];
+  for (const n of U.notes) if (!n.done && !n.lost && n.quote) out.push({ a: n.start, b: n.start + n.quote.length, cls: n.for === "ai" ? "n-ai" : "n-me", note: n.id });
+  for (const n of C.notes) {
+    if (n.done || (U.closed || []).includes(n.id)) continue;
+    const a = anchorIn(W, n); if (a !== null) out.push({ a, b: a + n.quote.length, cls: "n-c", note: n.id });
+  }
+  return out;
+}
+async function drawDoc() {
+  const p = proposal();
+  if (view !== latest) { // an older snapshot, read-only
+    const t = await loadVersion(view), i = P.versions.findIndex(v => v.name === view);
+    if (showDiff && i > 0) { const d = diffComposite(diffText(await loadVersion(P.versions[i - 1].name), t)); paintDoc(d.str, d.ranges, false, true); }
+    else paintDoc(t, [], false, true);
+  } else if (p && showProp) { const d = proposalComposite(p); paintDoc(d.str, d.ranges, false, false); }
+  else if (showDiff) {
+    const i = P.versions.findIndex(v => v.name === latest);
+    const from = U.draft != null ? await loadVersion(latest) : i > 0 ? await loadVersion(P.versions[i - 1].name) : W;
+    const d = diffComposite(diffText(from, W)); paintDoc(d.str, d.ranges, false, true);
+  } else paintDoc(W, noteRanges(), true, false);
+  if (curEdit) document.querySelectorAll(`#doc [data-edit="${curEdit}"]`).forEach(s => s.classList.add("cur-edit"));
+}
+function drawBar() {
+  $("pname").textContent = "· " + P.name;
+  const ro = view !== latest;
+  $("verchip").textContent = ro ? t("chip.viewing", { v: view }) : `${latest} · ${tn("chip.words", W.split(/\s+/).filter(Boolean).length)}`;
+  $("verchip").className = "chip" + (ro ? " warn" : "");
+  $("draftchip").style.display = U.draft != null && !ro ? "" : "none";
+  const p = proposal(), f = U.fix, chip = $("fixchip");
+  chip.style.display = "none";
+  if (f && !f.accepted && !ro) {
+    chip.style.display = "";
+    if (p && p.fix === f.n) { chip.className = "chip ok"; chip.textContent = tn("chip.fixEdits", p.edits.length, { f: f.n }); }
+    else if (staleProposal() && C.proposal.fix === f.n) { chip.className = "chip warn"; chip.textContent = t("chip.fixStale", { f: f.n }); }
+    else { chip.className = "chip wait"; chip.textContent = t("chip.fixWait", { f: f.n }); }
+  }
+  $("bProp").style.display = p && !ro ? "" : "none";
+  $("bProp").classList.toggle("on", showProp);
+  $("bDiff").classList.toggle("on", showDiff);
+  $("bEdit").disabled = ro; $("bFix").disabled = ro;
+  $("bEdit").classList.toggle("on", document.body.classList.contains("editing"));
+  const open = U.notes.filter(n => !n.done).length + C.notes.filter(n => !n.done && !(U.closed || []).includes(n.id)).length;
+  $("cNotes").textContent = open || "";
+  $("cEdits").textContent = p ? p.edits.length : "";
+  $("cVers").textContent = P.versions.length;
+}
+function noteCard(n, kind) {
+  const isC = kind === "cl", closed = isC ? (U.closed || []).includes(n.id) || n.done : n.done;
+  const ans = !isC && (C.proposal && C.proposal.base === latest ? (C.proposal.answers || []).filter(a => a.note === n.id) : []).map(a => a.text);
+  const answer = !isC ? (n.answer ? [n.answer] : ans) : [];
+  const fixedBy = !isC && proposal() ? proposal().edits.filter(e => e.note === n.id).map(e => proposal().edits.indexOf(e) + 1) : [];
+  return `<div class="card ${kind}${closed ? " done" : ""}${n.lost ? " lost" : ""}" data-id="${n.id}" data-kind="${kind}">
+    ${n.quote ? `<div class="q" data-go="${n.id}">${t("quoted", { q: esc(n.quote.slice(0, 160)) })}</div>` : `<div class="q" style="font-style:normal">${t("note.whole")}</div>`}
+    ${isC ? `<div class="t">${n.kind === "question" ? "❓ " : ""}${esc(n.text)}</div>` : `<div class="t" data-edit-note="${n.id}">${esc(n.text || t("note.empty"))}</div>`}
+    ${answer.map(a => `<div class="ans">${esc(a)}</div>`).join("")}
+    ${fixedBy.length ? `<div class="nt" style="font-size:12px;color:var(--dim);margin-top:4px">${t("note.fixedBy", { list: fixedBy.map(x => t("note.editNo", { n: x })).join(", ") })}</div>` : ""}
+    ${isC ? `<textarea data-reply="${n.id}" placeholder="${esc(t("note.reply"))}">${esc((U.replies || {})[n.id] || "")}</textarea>` : ""}
+    <div class="acts">
+      ${isC ? `<button class="small" data-close="${n.id}">${closed ? t("note.reopen") : t("note.close")}</button>`
+            : `<button class="small" data-done="${n.id}">${n.done ? t("note.undone") : t("note.done")}</button>
+               <button class="small" data-swap="${n.id}">${n.for === "ai" ? t("note.toMe") : t("note.toAi")}</button>
+               <button class="small" data-del="${n.id}">${t("note.delete")}</button>`}
+      ${isC ? `<button class="small mic" data-mic-reply="${n.id}">🎙</button>` : ""}
+      ${n.audio ? `<button class="small" data-play="${esc(n.audio)}">${t("note.voice")}</button>` : ""}
+    </div></div>`;
+}
+let showDone = false;
+function drawNotes() {
+  const ai = U.notes.filter(n => n.for === "ai" && (showDone || !n.done));
+  const me = U.notes.filter(n => n.for === "me" && (showDone || !n.done));
+  const cl = C.notes.filter(n => showDone || !(n.done || (U.closed || []).includes(n.id)));
+  const sect = (title, list, kind) => `<div class="lh"><span>${title} · ${list.length}</span></div>` + (list.length ? list.map(n => noteCard(n, kind)).join("") : `<div class="empty">${t("notes.empty")}</div>`);
+  $("p-notes").innerHTML = `<div class="lh"><span>${t("notes.hint")}</span><button class="small" id="bDone">${showDone ? t("notes.hideClosed") : t("notes.showClosed")}</button></div>`
+    + sect(t("notes.forAi"), ai, "ai") + sect(t("notes.fromAi"), cl, "cl") + sect(t("notes.toMe"), me, "me");
+}
+function edPreview(e) {
+  const d = diffText(e.old, e.new).map(([op, t]) => op === "eq" ? esc(t) : op === "del" ? `<s>${esc(t)}</s>` : `<u>${esc(t)}</u>`).join("");
+  return d.replace(/\n/g, " ⏎ ");
+}
+function drawEdits() {
+  const p = proposal(), el = $("p-edits");
+  if (!p) {
+    el.innerHTML = staleProposal() ? `<div class="empty" style="padding-top:14px">${t("edits.stale")}</div>`
+      : `<div class="empty" style="padding-top:14px">${t("edits.none")}</div>`;
+    if (U.draft != null && view === latest) el.innerHTML += `<div id="acceptbox"><button class="go" id="bAccept">${t("edits.saveDraft", { v: P.versions.length })}</button></div>`;
+    return;
+  }
+  const on = p.edits.filter(taken).length;
+  el.innerHTML = `<div id="summary">${esc(p.summary || "")}<div style="font:11.5px var(--mono);color:var(--dim);margin-top:3px">${t("edits.fixMade", { f: p.fix, made: esc(p.made) })}</div></div>
+    <div class="lh"><span>${t("edits.header", { on, total: p.edits.length })}</span><span><button class="small" data-all="take">${t("edits.all")}</button> <button class="small" data-all="skip">${t("edits.noneBtn")}</button></span></div>`
+    + p.edits.map((e, i) => {
+      const n = U.notes.find(x => x.id === e.note);
+      return `<div class="edit${taken(e) ? "" : " off"}${curEdit === e.id ? " cur" : ""}" data-edit="${e.id}">
+        <div class="r1"><span class="num">${i + 1}</span><span class="why">${esc(e.why || "")}</span><button class="small" data-toggle="${e.id}">${taken(e) ? t("edits.take") : t("edits.skip")}</button></div>
+        ${n ? `<div class="nt">${t("edits.forNote", { text: esc(n.text.slice(0, 120)) })}</div>` : ""}
+        <div class="pv">${edPreview(e)}</div></div>`;
+    }).join("")
+    + `<div id="acceptbox"><button class="go" id="bAccept">${t("edits.accept", { v: P.versions.length })}${U.draft != null ? t("edits.acceptDraft") : ""}</button></div>`;
+}
+function drawVers() {
+  $("p-vers").innerHTML = P.versions.slice().reverse().map(v => `<div class="ver${v.name === view ? " cur" : ""}" data-ver="${v.name}">
+    <div class="r1"><b>${v.name}${v.name === latest ? t("vers.current") : ""}</b><span class="m">${esc(v.made || "")}</span></div>
+    <div class="s">${esc(v.summary || "")}${v.by ? ` <span class="m">· ${esc(v.by)}</span>` : ""}</div></div>`).join("");
+}
+function drawRec() {
+  const tr = P.transcripts[0]; // `t` is the i18n helper, so the transcript is `tr`
+  if (!tr) { $("rec").innerHTML = `<div class="empty">${t("rec.noTranscript")}</div>`; return; }
+  $("rec").innerHTML = `${tr.audio ? `<audio id="au" controls preload="metadata" src="/media/${encodeURI(tr.audio)}"></audio>` : `<div class="empty">${t("rec.noAudio", { name: esc(tr.name) })}</div>`}
+    <div class="row"><span>${tn("rec.segments", tr.segments.length, { name: esc(tr.name) })}</span><span style="flex:1"></span><label><input type="checkbox" id="follow" checked> ${t("rec.follow")}</label></div>`;
+  $("segs").innerHTML = tr.segments.map((s, i) => `<div class="seg" data-seg="${i}"><i>${fmt(s.start)}</i>${esc(s.text)}</div>`).join("");
+  const au = $("au");
+  if (au) au.addEventListener("timeupdate", () => {
+    const i = tr.segments.findIndex(s => au.currentTime >= s.start && au.currentTime < s.end + 0.6);
+    if (i !== seg) {
+      document.querySelector(".seg.cur")?.classList.remove("cur"); seg = i;
+      const el = document.querySelector(`.seg[data-seg="${i}"]`);
+      if (el) { el.classList.add("cur"); if ($("follow").checked && tab === "rec") el.scrollIntoView({ block: "center", behavior: "smooth" }); }
+    }
+  });
+}
+async function draw() { drawBar(); await drawDoc(); drawNotes(); drawEdits(); drawVers(); }
+function setTab(t) {
+  tab = t;
+  document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.tab === t));
+  document.querySelectorAll(".pane").forEach(p => p.classList.toggle("cur", p.id === "p-" + t));
+}
+function play(t) {
+  const au = $("au"); if (!au) return;
+  setTab("rec"); au.currentTime = t; au.play();
+}
+function toast(t, err) { const el = $("toast"); el.textContent = t; el.className = err ? "err" : ""; el.style.display = "block"; clearTimeout(toast.t); toast.t = setTimeout(() => el.style.display = "none", err ? 6000 : 3200); }
+
+/* ── save / poll ── */
+function touch() { dirty = true; clearTimeout(saveTimer); saveTimer = setTimeout(save, 600); try { localStorage.setItem("pravka." + P.name, JSON.stringify(U)); } catch (e) { console.warn("localStorage unavailable:", e); } }
+async function save() {
+  clearTimeout(saveTimer);
+  try {
+    const r = await fetch("/api/user", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(U) });
+    const j = await r.json(); if (!r.ok) throw new Error(j.error);
+    userMtime = j.mtime; dirty = false;
+  } catch (e) { toast(t("toast.notSaved", { msg: e.message }), true); }
+}
+async function poll() {
+  try {
+    const p = await getJSON("/api/poll");
+    let redraw = false;
+    if (p.agent !== agentMtime) {
+      const was = C.proposal && C.proposal.id; const c = await getJSON("/api/agent"); C = c.data; agentMtime = c.mtime; redraw = true;
+      if (proposal() && C.proposal.id !== was) { setTab("edits"); toast(t("toast.agentEdits", { n: C.proposal.edits.length })); }
+    }
+    if (p.versions.length !== P.versions.length) { await reloadProject(); redraw = true; }
+    if (p.user !== userMtime && !dirty) { const u = await getJSON("/api/user"); U = u.data; userMtime = u.mtime; await refreshW(); redraw = true; }
+    if (redraw && !document.body.classList.contains("editing")) await draw(); else if (redraw) drawBar();
+  } catch (e) { console.warn("poll failed, retrying in 2 s:", e); }
+  setTimeout(poll, 2000);
+}
+async function reloadProject() {
+  const pr = await getJSON("/api/project");
+  P.versions = pr.versions;
+  const was = latest; latest = P.versions[P.versions.length - 1].name;
+  if (view === was) view = latest;
+  await refreshW();
+}
+
+/* ── actions ── */
+function selOffsets() {
+  const s = window.getSelection(); if (!s.rangeCount || s.isCollapsed) return null;
+  const r = s.getRangeAt(0);
+  const pos = (node, off) => {
+    if (node.nodeType === 3) { const sp = node.parentElement.closest("[data-s]"); return sp ? +sp.dataset.s + off : null; }
+    if (off < node.childNodes.length) { const ch = node.childNodes[off]; const sp = ch.nodeType === 1 ? (ch.matches("[data-s]") ? ch : ch.querySelector("[data-s]")) : null; return sp ? +sp.dataset.s : null; }
+    const all = node.querySelectorAll("[data-s]"), last = all[all.length - 1]; return last ? +last.dataset.s + last.textContent.length : null;
+  };
+  let a = pos(r.startContainer, r.startOffset), b = pos(r.endContainer, r.endOffset);
+  if (a === null || b === null) return null;
+  while (a < b && /\s/.test(W[a])) a++;
+  while (b > a && /\s/.test(W[b - 1])) b--;
+  return b > a ? { a, b, rect: r.getBoundingClientRect() } : null;
+}
+let popSel = null;
+function openPop(sel) {
+  popSel = sel; popAudio = null;
+  $("popq").textContent = t("quoted", { q: W.slice(sel.a, sel.b).slice(0, 200) });
+  $("popt").value = "";
+  const pop = $("pop"); pop.style.display = "block";
+  const x = Math.min(window.innerWidth - 420 - 350, Math.max(10, sel.rect.left));
+  const y = sel.rect.bottom + 8 + 170 > window.innerHeight ? sel.rect.top - 178 : sel.rect.bottom + 8;
+  pop.style.left = x + "px"; pop.style.top = Math.max(8, y) + "px";
+  setTimeout(() => $("popt").focus(), 0);
+}
+function closePop() { if (rec && rec.btn === $("popMic")) return; $("pop").style.display = "none"; popSel = null; }
+function addNote(kind) {
+  if (!popSel) return;
+  const quote = W.slice(popSel.a, popSel.b);
+  U.notes.push({ id: "u" + Date.now().toString(36), for: kind, text: $("popt").value.trim(), quote, start: popSel.a, end: popSel.b, ver: latest, created: now(), ...(popAudio ? { audio: popAudio } : {}) });
+  closePop(); window.getSelection().removeAllRanges(); touch(); draw(); setTab("notes");
+}
+function goNote(id) {
+  if (view !== latest) { view = latest; }
+  showProp = false; showDiff = false;
+  draw().then(() => {
+    const el = document.querySelector(`#doc [data-notes~="${id}"]`);
+    if (!el) return toast(t("toast.noteLost"));
+    el.scrollIntoView({ block: "center", behavior: "smooth" });
+    document.querySelectorAll(`#doc [data-notes~="${id}"]`).forEach(s => { s.classList.remove("flash"); void s.offsetWidth; s.classList.add("flash"); });
+  });
+}
+function goEdit(id) {
+  curEdit = id; showProp = true;
+  draw().then(() => {
+    const el = document.querySelector(`#doc [data-edit="${id}"]`);
+    if (el) el.scrollIntoView({ block: "center", behavior: "smooth" });
+    document.querySelector(`.edit[data-edit="${id}"]`)?.scrollIntoView({ block: "nearest" });
+  });
+}
+function toggleEdit(id, to) { const e = proposal().edits.find(x => x.id === id); U.decisions[id] = to || (taken(e) ? "skip" : "take"); touch(); curEdit = id; draw(); }
+function startEditing() {
+  if (view !== latest) return;
+  closePop(); document.body.classList.add("editing"); $("ed").value = W; drawBar(); $("ed").focus();
+}
+async function stopEditing() {
+  if (!document.body.classList.contains("editing")) return;
+  document.body.classList.remove("editing"); await commitDraft(); await draw();
+}
+let draftTimer = null;
+async function commitDraft() {
+  clearTimeout(draftTimer);
+  const v = $("ed").value, base = await loadVersion(latest);
+  const draft = v === base ? null : v;
+  if (draft === U.draft) return;
+  U.draft = draft; U.base = latest;
+  await refreshW(); touch();
+}
+function openFix() {
+  if (view !== latest) return;
+  stopEditing();
+  const n = U.notes.filter(x => x.for === "ai" && !x.done).length;
+  $("fixinfo").textContent = t("fix.info", { n, notes: tn("fix.info.notes", n), draft: U.draft != null ? t("fix.info.draft") : "" });
+  $("fixc").value = "";
+  const fp = $("fixpop"); fp.style.display = "block"; fp.style.left = Math.max(10, $("bFix").getBoundingClientRect().right - 360) + "px";
+  setTimeout(() => $("fixc").focus(), 0);
+}
+function sendFix() {
+  U.fix = { n: (U.fix ? U.fix.n : 0) + 1, at: now(), base: latest, hash: Whash, comment: $("fixc").value.trim() || null };
+  U.decisions = {};
+  $("fixpop").style.display = "none";
+  save(); drawBar(); toast(t("toast.fixSent"));
+}
+async function accept() {
+  const p = proposal();
+  const take = p ? p.edits.filter(taken).map(e => e.id) : [];
+  try {
+    if (dirty) await save();
+    const r = await fetch("/api/accept", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ take, proposal: p ? p.id : null }) });
+    const j = await r.json(); if (!r.ok) throw new Error(j.error);
+    texts[j.version] = j.text;
+    // close the notes that this version answered; the rest follow the new text
+    for (const n of U.notes) {
+      if (n.done || n.for !== "ai" || !p) continue;
+      const fixed = p.edits.some(e => e.note === n.id && take.includes(e.id));
+      const ans = (p.answers || []).find(a => a.note === n.id);
+      if (fixed || ans) { n.done = true; n.doneIn = j.version; if (ans) n.answer = ans.text; }
+    }
+    if (U.fix && p) U.fix.accepted = p.id;
+    U.draft = null; U.decisions = {}; curEdit = null;
+    await reloadProject(); U.base = latest; await refreshW(); await save();
+    showProp = true; showDiff = false; await draw();
+    toast(t("toast.saved", { v: j.version }) + (j.warning ? ` · ${j.warning}` : ""), !!j.warning);
+  } catch (e) { toast(t("toast.notAccepted", { msg: e.message }), true); }
+}
+
+/* ── voice: record in the browser, the server transcribes with GigaAM ── */
+let rec = null, popAudio = null;
+const player = new Audio();
+async function mic(btn, onText) {
+  if (rec) { if (rec.btn === btn) rec.mr.stop(); else toast(t("toast.alreadyRec")); return; }
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+  catch (e) { return toast(t("toast.noMic", { msg: e.message }), true); }
+  const type = ["audio/webm;codecs=opus", "audio/mp4", "audio/ogg;codecs=opus"].find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || "";
+  const mr = new MediaRecorder(stream, type ? { mimeType: type } : {}), chunks = [], label = btn.innerHTML, t0 = Date.now();
+  rec = { mr, btn };
+  btn.classList.add("rec");
+  const tick = setInterval(() => btn.textContent = "■ " + fmt((Date.now() - t0) / 1000), 250);
+  mr.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+  mr.onstop = async () => {
+    clearInterval(tick); stream.getTracks().forEach(t => t.stop()); rec = null;
+    btn.classList.remove("rec"); btn.textContent = t("mic.transcribing"); btn.disabled = true;
+    try {
+      const blob = new Blob(chunks, { type: mr.mimeType || type || "audio/webm" });
+      const r = await fetch("/api/voice", { method: "POST", headers: { "Content-Type": blob.type }, body: blob });
+      const j = await r.json(); if (!r.ok) throw new Error(j.error);
+      if (!j.text) toast(t("toast.nothingHeard")); else onText(j.text, j.audio);
+    } catch (e) { toast(t("toast.voiceFail", { msg: e.message }), true); }
+    btn.innerHTML = label; btn.disabled = false;
+  };
+  mr.start();
+}
+const append = (el, t) => { el.value = (el.value.trim() + " " + t).trim(); el.dispatchEvent(new Event("input", { bubbles: true })); };
+function voiceNote() {
+  if (view !== latest) return;
+  mic($("bVoice"), (text, audio) => {
+    U.notes.push({ id: "u" + Date.now().toString(36), for: "ai", text, quote: "", start: null, end: null, ver: latest, created: now(), audio });
+    touch(); draw(); setTab("notes"); toast(t("toast.generalNote"));
+  });
+}
+$("bVoice").onclick = voiceNote;
+$("popMic").onclick = () => mic($("popMic"), (text, audio) => { if ($("pop").style.display !== "block") return toast(t("toast.popClosed", { text })); append($("popt"), text); popAudio = audio; $("popt").focus(); });
+$("fixMic").onclick = () => mic($("fixMic"), text => { append($("fixc"), text); $("fixc").focus(); });
+
+/* ── events ── */
+$("doc").addEventListener("mouseup", e => {
+  if (view !== latest || proposal() && showProp || showDiff) {
+    const ed = e.target.closest("[data-edit]");
+    if (ed && proposal() && showProp) { setTab("edits"); toggleEdit(ed.dataset.edit); }
+    return;
+  }
+  const sel = selOffsets();
+  if (sel) return openPop(sel);
+  const tc = e.target.closest("[data-t]"); if (tc) return play(+tc.dataset.t);
+  const nt = e.target.closest("[data-notes]");
+  if (nt) { setTab("notes"); const id = nt.dataset.notes.split(" ")[0]; const c = document.querySelector(`.card[data-id="${id}"]`); if (c) { c.scrollIntoView({ block: "center", behavior: "smooth" }); c.animate([{ outline: "2px solid #fff" }, { outline: "2px solid transparent" }], 1400); } }
+});
+$("popAi").onclick = () => addNote("ai"); $("popMe").onclick = () => addNote("me"); $("popX").onclick = closePop;
+$("popt").addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey && !e.altKey) { e.preventDefault(); addNote("ai"); }
+  else if (e.key === "Enter" && e.shiftKey) { e.preventDefault(); addNote("me"); }
+  else if (e.key === "Escape") closePop();
+});
+$("fixGo").onclick = sendFix; $("fixX").onclick = () => $("fixpop").style.display = "none";
+$("fixc").addEventListener("keydown", e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) sendFix(); else if (e.key === "Escape") $("fixpop").style.display = "none"; });
+$("bFix").onclick = openFix;
+$("bEdit").onclick = () => document.body.classList.contains("editing") ? stopEditing() : startEditing();
+$("bDiff").onclick = () => { showDiff = !showDiff; if (showDiff) showProp = false; draw(); };
+$("bProp").onclick = () => { showProp = !showProp; if (showProp) showDiff = false; draw(); };
+$("bHelp").onclick = () => $("help").style.display = "flex";
+$("help").onclick = () => $("help").style.display = "none";
+$("ed").addEventListener("input", () => { clearTimeout(draftTimer); draftTimer = setTimeout(commitDraft, 800); });
+$("ed").addEventListener("keydown", e => { if (e.key === "Escape") { e.preventDefault(); stopEditing(); } });
+$("tabs").onclick = e => { const b = e.target.closest("button"); if (b) setTab(b.dataset.tab); };
+$("side").addEventListener("click", e => {
+  const el = e.target, d = el.dataset; // `t` is the i18n helper
+  if (el.id === "bDone") { showDone = !showDone; return drawNotes(); }
+  if (el.id === "bAccept") return accept();
+  if (d.go) return goNote(d.go);
+  if (d.done) { const n = U.notes.find(x => x.id === d.done); n.done = !n.done; touch(); return draw(); }
+  if (d.swap) { const n = U.notes.find(x => x.id === d.swap); n.for = n.for === "ai" ? "me" : "ai"; touch(); return draw(); }
+  if (d.del) { if (!confirm(t("note.confirmDelete"))) return; U.notes = U.notes.filter(x => x.id !== d.del); touch(); return draw(); }
+  if (d.close) { U.closed = U.closed || []; U.closed = U.closed.includes(d.close) ? U.closed.filter(x => x !== d.close) : U.closed.concat(d.close); touch(); return draw(); }
+  if (d.editNote) { // edit the note text in place
+    const n = U.notes.find(x => x.id === d.editNote), ta = document.createElement("textarea");
+    ta.value = n.text; el.replaceWith(ta); ta.focus();
+    const done = () => { n.text = ta.value.trim(); touch(); draw(); };
+    ta.addEventListener("blur", done); ta.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ta.blur(); } if (e.key === "Escape") ta.blur(); });
+    return;
+  }
+  if (d.toggle) { e.stopPropagation(); return toggleEdit(d.toggle); }
+  if (d.play) { player.src = "/media/" + encodeURI(d.play); player.play(); return; }
+  if (d.micReply) { const id = d.micReply; return mic(el, text => { const ta = document.querySelector(`textarea[data-reply="${id}"]`); if (ta) append(ta, text); }); }
+  if (d.all) { for (const x of proposal().edits) U.decisions[x.id] = d.all; touch(); return draw(); }
+  const ed = el.closest(".edit"); if (ed) return goEdit(ed.dataset.edit);
+  const v = el.closest(".ver"); if (v) { view = v.dataset.ver; if (view !== latest) { showProp = false; } stopEditing(); return draw(); }
+  const sg = el.closest(".seg"); if (sg) { const s = P.transcripts[0].segments[+sg.dataset.seg]; const au = $("au"); if (au) { au.currentTime = s.start; au.play(); } }
+});
+$("side").addEventListener("input", e => { const r = e.target.dataset.reply; if (r) { U.replies[r] = e.target.value; touch(); } });
+// Russian-layout letters on the same physical keys as E / F / R, so the shortcuts work without switching layouts.
+const KEY_RU = { e: "\u0443", f: "\u0430", r: "\u043a" };
+document.addEventListener("keydown", e => {
+  const typing = /TEXTAREA|INPUT/.test(document.activeElement.tagName);
+  if (e.key === "Escape") { closePop(); $("fixpop").style.display = "none"; $("help").style.display = "none"; }
+  if (typing) return;
+  if (e.key === "e" || e.key === KEY_RU.e) { e.preventDefault(); startEditing(); }
+  else if (e.key === "f" || e.key === KEY_RU.f) { e.preventDefault(); openFix(); }
+  else if (e.key === "r" || e.key === KEY_RU.r) { e.preventDefault(); voiceNote(); }
+  else if (e.key === " " && $("au")) { e.preventDefault(); const au = $("au"); au.paused ? au.play() : au.pause(); }
+  else if (e.key === "?") $("help").style.display = "flex";
+});
+window.addEventListener("beforeunload", () => { if (dirty) fetch("/api/user", { method: "PUT", keepalive: true, headers: { "Content-Type": "application/json" }, body: JSON.stringify(U) }); });
+
+(async function () {
+  try {
+    P = await getJSON("/api/project");
+    P.audio = !!(P.transcripts[0] && P.transcripts[0].audio);
+    const u = await getJSON("/api/user"); U = u.data; userMtime = u.mtime;
+    U.replies = U.replies || {}; U.decisions = U.decisions || {}; U.closed = U.closed || [];
+    const c = await getJSON("/api/agent"); C = c.data; agentMtime = c.mtime;
+    latest = P.versions[P.versions.length - 1].name; view = latest;
+    await refreshW();
+    document.title = t("app") + " · " + P.name; { const hf = document.querySelector('[data-i18n-html="help.file"]'); if (hf) hf.innerHTML = t("help.file", { mirror: esc(P.mirror || "script.md") }); }
+    drawRec(); await draw();
+    if (proposal()) setTab("edits"); // the agent's edits are waiting for a decision
+    if (!U.notes.length && !localStorage.getItem("pravka.help")) { $("help").style.display = "flex"; try { localStorage.setItem("pravka.help", "1"); } catch (e) { console.warn("localStorage unavailable:", e); } }
+    poll();
+  } catch (e) { document.body.innerHTML = `<pre style="padding:30px;color:#ffb3ab">${esc(t("load.fail", { msg: e.message }))}</pre>`; }
+})();
+</script>
+</body>
+</html>
