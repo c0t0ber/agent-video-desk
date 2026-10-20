@@ -10,6 +10,8 @@ Agent skills and a plugin for **Claude Code** and **OpenAI Codex** (and any agen
 ![Codex plugin](https://img.shields.io/badge/Codex-plugin-10a37f)
 ![Zero dependencies](https://img.shields.io/badge/python-stdlib%20only-3776ab)
 
+![Script Desk in action: the author's notes, Fix, the agent's edits appear inline, take or skip, Accept → v1](docs/images/script-desk-demo.gif)
+
 | Skill | What it does |
 |---|---|
 | **[Script Desk](skills/script-desk/SKILL.md)** | Leave notes on your script, press **Fix**, and your agent proposes concrete edits. You take or skip each one, and every accepted round becomes a version snapshot. |

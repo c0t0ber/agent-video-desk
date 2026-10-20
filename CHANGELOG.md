@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- Animated demo of the Script Desk loop and a social preview image in `docs/images/`.
+
+### Fixed
+
+- Script Desk: the top bar no longer wraps onto a second line at common laptop widths.
+
 ## [0.1.0] - 2026-10-20
 
 ### Added
