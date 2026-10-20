@@ -57,6 +57,8 @@ npx skills add c0t0ber/agent-video-desk
 
 Requirements: Python 3.11+, `ffmpeg` for Footage Desk, and [`uv`](https://docs.astral.sh/uv/) for transcription. Tested on macOS and Linux.
 
+Script Desk and Footage Desk make no network requests. `ru-transcribe` is the only part that goes online: on its first run `uv` installs its Python dependencies (PyTorch, WhisperX, and GigaAM from its GitHub repository) and the models download about 2.5 GB of weights from Hugging Face. After that it runs offline. See [SECURITY.md](SECURITY.md).
+
 ## Try it in two minutes
 
 The repo ships a tiny demo project: a script draft, three short clips and their word-level transcripts.

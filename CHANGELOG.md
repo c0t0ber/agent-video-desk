@@ -4,9 +4,18 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-20
+
 ### Added
 
 - Animated demo of the Script Desk loop and a social preview image in `docs/images/`.
+- Plugin icon (`assets/icon.png`), used as the Codex composer icon and logo.
+- `SECURITY.md`: what runs locally, what goes online, how to report a vulnerability.
+
+### Changed
+
+- GitHub Actions are pinned to commit SHAs.
+- README states which part downloads dependencies and models, and from where.
 
 ### Fixed
 
@@ -25,5 +34,6 @@ All notable changes to this project are documented here. The format follows [Kee
 - Plugin manifests and marketplaces for Claude Code and Codex; `npx skills` compatible layout.
 - Demo project, screenshots, CI on Linux and macOS.
 
-[Unreleased]: https://github.com/c0t0ber/agent-video-desk/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/c0t0ber/agent-video-desk/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/c0t0ber/agent-video-desk/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/c0t0ber/agent-video-desk/releases/tag/v0.1.0

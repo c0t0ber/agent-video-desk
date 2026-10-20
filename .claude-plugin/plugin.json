@@ -1,10 +1,28 @@
 {
   "name": "agent-video-desk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Shared browser desks for an AI agent (Claude Code, Codex) and a human: co-edit a video script, pick footage by transcript words, and transcribe Russian speech verbatim with word timestamps.",
-  "author": { "name": "roktober", "url": "https://github.com/c0t0ber" },
+  "author": {
+    "name": "roktober",
+    "url": "https://github.com/c0t0ber"
+  },
   "homepage": "https://github.com/c0t0ber/agent-video-desk",
   "repository": "https://github.com/c0t0ber/agent-video-desk",
   "license": "MIT",
-  "keywords": ["claude-code","codex","agent-skills","video-editing","paper-edit","text-based-editing","transcript","script-writing","whisper","whisperx","word-timestamps","russian","youtube","human-in-the-loop"]
+  "keywords": [
+    "claude-code",
+    "codex",
+    "agent-skills",
+    "video-editing",
+    "paper-edit",
+    "text-based-editing",
+    "transcript",
+    "script-writing",
+    "whisper",
+    "whisperx",
+    "word-timestamps",
+    "russian",
+    "youtube",
+    "human-in-the-loop"
+  ]
 }
