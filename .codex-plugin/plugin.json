@@ -1,6 +1,6 @@
 {
   "name": "agent-video-desk",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Shared browser desks for an AI agent (Claude Code, Codex) and a human: co-edit a video script, pick footage by transcript words, and transcribe Russian speech verbatim with word timestamps.",
   "author": {
     "name": "roktober",

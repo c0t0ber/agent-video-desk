@@ -981,14 +981,14 @@ $("side").addEventListener("click", e => {
 });
 $("side").addEventListener("input", e => { const r = e.target.dataset.reply; if (r) { U.replies[r] = e.target.value; touch(); } });
 // Russian-layout letters on the same physical keys as E / F / R, so the shortcuts work without switching layouts.
-const KEY_RU = { e: "\u0443", f: "\u0430", r: "\u043a" };
+const RU_LAYOUT = { e: "\u0443", f: "\u0430", r: "\u043a" };
 document.addEventListener("keydown", e => {
   const typing = /TEXTAREA|INPUT/.test(document.activeElement.tagName);
   if (e.key === "Escape") { closePop(); $("fixpop").style.display = "none"; $("help").style.display = "none"; }
   if (typing) return;
-  if (e.key === "e" || e.key === KEY_RU.e) { e.preventDefault(); startEditing(); }
-  else if (e.key === "f" || e.key === KEY_RU.f) { e.preventDefault(); openFix(); }
-  else if (e.key === "r" || e.key === KEY_RU.r) { e.preventDefault(); voiceNote(); }
+  if (e.key === "e" || e.key === RU_LAYOUT.e) { e.preventDefault(); startEditing(); }
+  else if (e.key === "f" || e.key === RU_LAYOUT.f) { e.preventDefault(); openFix(); }
+  else if (e.key === "r" || e.key === RU_LAYOUT.r) { e.preventDefault(); voiceNote(); }
   else if (e.key === " " && $("au")) { e.preventDefault(); const au = $("au"); au.paused ? au.play() : au.pause(); }
   else if (e.key === "?") $("help").style.display = "flex";
 });

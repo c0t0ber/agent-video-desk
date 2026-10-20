@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-10-20
+
+### Changed
+
+- Demo clips are no longer committed as binaries; `examples/demo/make_clips.py` generates them with ffmpeg and the system text-to-speech (`say` on macOS, `espeak-ng` on Linux).
+- Script Desk: the Russian keyboard-layout map is named `RU_LAYOUT`, so security scanners don't mistake it for a key.
+
 ## [0.1.1] - 2026-10-20
 
 ### Added
@@ -34,6 +41,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - Plugin manifests and marketplaces for Claude Code and Codex; `npx skills` compatible layout.
 - Demo project, screenshots, CI on Linux and macOS.
 
-[Unreleased]: https://github.com/c0t0ber/agent-video-desk/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/c0t0ber/agent-video-desk/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/c0t0ber/agent-video-desk/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/c0t0ber/agent-video-desk/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/c0t0ber/agent-video-desk/releases/tag/v0.1.0

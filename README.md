@@ -61,10 +61,11 @@ Script Desk and Footage Desk make no network requests. `ru-transcribe` is the on
 
 ## Try it in two minutes
 
-The repo ships a tiny demo project: a script draft, three short clips and their word-level transcripts.
+The repo ships a tiny demo project: a script draft and word-level transcripts for three short clips. The clips themselves are generated locally by a small script (ffmpeg plus your system's text-to-speech).
 
 ```bash
 git clone https://github.com/c0t0ber/agent-video-desk && cd agent-video-desk
+python3 examples/demo/make_clips.py
 python3 skills/script-desk/scripts/cli.py --project examples/demo init --from examples/demo/script-draft.md
 python3 skills/script-desk/scripts/server.py --project examples/demo        # → http://127.0.0.1:8766
 python3 skills/footage-desk/scripts/cli.py --project examples/demo build

@@ -11,7 +11,7 @@ Guidance for AI agents working **on** this repository. To **use** the desks, loa
 skills/script-desk/    SKILL.md + scripts/{server.py, cli.py, store.py, index.html}
 skills/footage-desk/   SKILL.md + scripts/{server.py, cli.py, index.html}
 skills/ru-transcribe/  SKILL.md + scripts/{transcribe.py, repeats.py, peek.py, compare.py} (uv inline deps)
-examples/demo/         demo project used by the README and screenshots
+examples/demo/         demo project: script draft, transcripts, make_clips.py (clips are generated, not committed)
 tests/                 unittest suite: real servers, real ffmpeg on generated clips
 ```
 
